@@ -1,0 +1,557 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String         @id @default(cuid())
+  email           String         @unique
+  phone           String?
+  firstName       String?
+  lastName        String?
+  companyName     String
+  role            UserRole       @default(BUYER)
+  kycStatus       KycStatus      @default(NOT_SUBMITTED)
+  isActive        Boolean        @default(true)
+  isEmailVerified Boolean        @default(false)
+  isPhoneVerified Boolean        @default(false)
+  profileImage    String?
+  password        String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  addresses       Address[]
+  bankDetails     BankDetail?
+  bids            Bid[]
+  kyc             Kyc?
+  listings        Listing[]
+  notifications   Notification[]
+  quotes          Quote[]
+  requirements    Requirement[]
+  wishlist        WishlistItem[]
+
+  @@map("users")
+}
+
+model OtpVerification {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  phone     String?
+  otp       String
+  attempts  Int      @default(0)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("otp_verifications")
+}
+
+model Address {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  line1     String
+  line2     String?
+  city      String
+  state     String
+  country   String   @default("India")
+  pincode   String
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("addresses")
+}
+
+model Kyc {
+  id              String        @id @default(cuid())
+  userId          String        @unique
+  panNumber       String?
+  aadhaarNumber   String?
+  gstNumber       String?
+  yearsInBusiness Int?
+  kycStatus       KycStatus     @default(PENDING)
+  rejectionReason String?
+  reviewedBy      String?
+  reviewedAt      DateTime?
+  submittedAt     DateTime      @default(now())
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  documents       KycDocument[]
+
+  @@map("kyc")
+}
+
+model KycDocument {
+  id         String   @id @default(cuid())
+  kycId      String
+  type       String
+  fileName   String
+  fileUrl    String
+  fileSize   Int
+  mimeType   String
+  isVerified Boolean  @default(false)
+  uploadedAt DateTime @default(now())
+  kyc        Kyc      @relation(fields: [kycId], references: [id], onDelete: Cascade)
+
+  @@map("kyc_documents")
+}
+
+model BankDetail {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  accountNumber     String
+  ifscCode          String
+  bankName          String
+  accountHolderName String
+  isVerified        Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("bank_details")
+}
+
+model Category {
+  id            String        @id @default(cuid())
+  name          String        @unique
+  description   String?
+  parentId      String?
+  isActive      Boolean       @default(true)
+  sortOrder     Int           @default(0)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  parent        Category?     @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children      Category[]    @relation("CategoryHierarchy")
+  listings      Listing[]
+  products      Product[]
+  requirements  Requirement[]
+  subcategories Subcategory[]
+  productSubcategories Product[] @relation("ProductSubcategory")
+
+  @@map("categories")
+}
+
+model Subcategory {
+  id           String        @id @default(cuid())
+  name         String
+  description  String?
+  categoryId   String
+  isActive     Boolean       @default(true)
+  sortOrder    Int           @default(0)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  listings     Listing[]
+  requirements Requirement[]
+  category     Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@map("subcategories")
+}
+
+model Brand {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  description String?
+  logo        String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  listings    Listing[]
+  products    Product[]
+
+  @@map("brands")
+}
+
+model Unit {
+  id           String        @id @default(cuid())
+  name         String        @unique
+  symbol       String        @unique
+  description  String?
+  isActive     Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  listings     Listing[]
+  requirements Requirement[]
+
+  @@map("units")
+}
+
+model Product {
+  id             String       @id @default(cuid())
+  name           String
+  description    String?
+  keyFeatures    String?
+  specifications Json?
+  categoryId     String
+  subcategoryId  String?
+  brandId        String?
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  brand          Brand?       @relation(fields: [brandId], references: [id])
+  category       Category     @relation(fields: [categoryId], references: [id])
+  subcategory    Category?    @relation("ProductSubcategory", fields: [subcategoryId], references: [id])
+
+  @@map("products")
+}
+
+model Listing {
+  id              String         @id @default(cuid())
+  userId          String
+  title           String
+  description     String
+  categoryId      String
+  subcategoryId   String?
+  brandId         String?
+  unitId          String
+  listingType     ListingType
+  basePrice       Decimal
+  moq             String
+  quantity        Decimal?
+  specifications  Json?
+  images          String[]
+  status          ListingStatus  @default(PENDING)
+  isActive        Boolean        @default(true)
+  views           Int            @default(0)
+  submittedAt     DateTime       @default(now())
+  approvedAt      DateTime?
+  approvedBy      String?
+  rejectionReason String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  auctions        Auction[]
+  brand           Brand?         @relation(fields: [brandId], references: [id])
+  category        Category       @relation(fields: [categoryId], references: [id])
+  subcategory     Subcategory?   @relation(fields: [subcategoryId], references: [id])
+  unit            Unit           @relation(fields: [unitId], references: [id])
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wishlist        WishlistItem[]
+
+  @@map("listings")
+}
+
+model Requirement {
+  id               String             @id @default(cuid())
+  userId           String
+  title            String
+  description      String
+  categoryId       String
+  subcategoryId    String?
+  unitId           String
+  quantity         String
+  urgency          RequirementUrgency @default(MEDIUM)
+  status           RequirementStatus  @default(OPEN)
+  deliveryMethod   String
+  deliveryTimeline String
+  country          String             @default("India")
+  city             String?
+  state            String?
+  technicalSpecs   Json?
+  images           String[]
+  visibility       String             @default("public")
+  visibilityType   String?
+  selectedUsers    String[]           @default([])
+  selectedEmails   String[]           @default([])
+  quotesCount      Int                @default(0)
+  deadline         DateTime?
+  postedAt         DateTime           @default(now())
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  auctions         Auction[]
+  quotes           Quote[]
+  category         Category           @relation(fields: [categoryId], references: [id])
+  subcategory      Subcategory?       @relation(fields: [subcategoryId], references: [id])
+  unit             Unit               @relation(fields: [unitId], references: [id])
+  user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("requirements")
+}
+
+model Auction {
+  id                  String        @id @default(cuid())
+  type                AuctionType
+  title               String
+  description         String
+  listingId           String?
+  requirementId       String?
+  totalQuantity       Decimal
+  filledQuantity      Decimal       @default(0)
+  startPrice          Decimal?
+  reservePrice        Decimal?
+  currentBid          Decimal?
+  minimumBidIncrement Decimal?
+  startTime           DateTime
+  endTime             DateTime
+  status              AuctionStatus @default(SCHEDULED)
+  biddersCount        Int           @default(0)
+  isH1H2SplitEnabled  Boolean       @default(false)
+  h1H2SplitRatio      Decimal?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+  listing             Listing?      @relation(fields: [listingId], references: [id])
+  requirement         Requirement?  @relation(fields: [requirementId], references: [id])
+  bids                Bid[]
+
+  @@map("auctions")
+}
+
+model Bid {
+  id        String    @id @default(cuid())
+  auctionId String
+  userId    String
+  amount    Decimal
+  quantity  Decimal?
+  status    BidStatus @default(ACTIVE)
+  isWinning Boolean   @default(false)
+  placedAt  DateTime  @default(now())
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  auction   Auction   @relation(fields: [auctionId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("bids")
+}
+
+model Quote {
+  id            String      @id @default(cuid())
+  requirementId String
+  userId        String
+  amount        Decimal
+  quantity      String
+  description   String?
+  status        QuoteStatus @default(PENDING)
+  validUntil    DateTime?
+  submittedAt   DateTime    @default(now())
+  respondedAt   DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  requirement   Requirement @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("quotes")
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  data      Json?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model WishlistItem {
+  id        String   @id @default(cuid())
+  userId    String
+  listingId String
+  createdAt DateTime @default(now())
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, listingId])
+  @@map("wishlist_items")
+}
+
+model AdminUser {
+  id          String    @id @default(cuid())
+  email       String    @unique
+  firstName   String
+  lastName    String
+  password    String
+  role        AdminRole
+  isActive    Boolean   @default(true)
+  lastLoginAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("admin_users")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  adminId   String?
+  userId    String?
+  action    String
+  entity    String
+  entityId  String?
+  oldData   Json?
+  newData   Json?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@map("audit_logs")
+}
+
+model CommissionRule {
+  id            String    @id @default(cuid())
+  name          String
+  categoryId    String?
+  subcategoryId String?
+  brandId       String?
+  percentage    Decimal
+  fixedAmount   Decimal?
+  minAmount     Decimal?
+  maxAmount     Decimal?
+  isActive      Boolean   @default(true)
+  effectiveFrom DateTime
+  effectiveTo   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("commission_rules")
+}
+
+model Invoice {
+  id            String    @id @default(cuid())
+  invoiceNumber String    @unique
+  userId        String
+  amount        Decimal
+  commission    Decimal
+  status        String
+  dueDate       DateTime
+  paidAt        DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("invoices")
+}
+
+model ChatRoom {
+  id           String                @id @default(cuid())
+  name         String?
+  type         String
+  entityId     String?
+  isActive     Boolean               @default(true)
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+  messages     ChatMessage[]
+  participants ChatRoomParticipant[]
+
+  @@map("chat_rooms")
+}
+
+model ChatRoomParticipant {
+  id       String    @id @default(cuid())
+  roomId   String
+  userId   String
+  joinedAt DateTime  @default(now())
+  leftAt   DateTime?
+  room     ChatRoom  @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, userId])
+  @@map("chat_room_participants")
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  roomId    String
+  userId    String
+  message   String
+  isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
+  room      ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@map("chat_messages")
+}
+
+enum UserRole {
+  BUYER
+  SELLER
+  BOTH
+  ADMIN
+}
+
+enum KycStatus {
+  NOT_SUBMITTED
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ListingType {
+  FIXED
+  NEGOTIATION
+  BIDDING
+}
+
+enum ListingStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  DRAFT
+}
+
+enum RequirementStatus {
+  OPEN
+  QUOTED
+  CLOSED
+  CANCELLED
+}
+
+enum RequirementUrgency {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum AuctionType {
+  REVERSE
+  TRADITIONAL
+}
+
+enum AuctionStatus {
+  SCHEDULED
+  LIVE
+  PAUSED
+  ENDED
+  CANCELLED
+}
+
+enum BidStatus {
+  ACTIVE
+  OUTBID
+  WINNING
+  WON
+  LOST
+}
+
+enum QuoteStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+enum NotificationType {
+  BID_UPDATE
+  QUOTE_RECEIVED
+  AUCTION_ENDING
+  KYC_STATUS
+  SYSTEM_ALERT
+  LISTING_APPROVED
+  LISTING_REJECTED
+  REQUIREMENT_QUOTED
+  PAYMENT_SUCCESS
+  PAYMENT_FAILED
+}
+
+enum AdminRole {
+  SUPER_ADMIN
+  COMPLIANCE
+  MODERATOR
+  FINANCE
+  CMS_EDITOR
+  SUPPORT
+}

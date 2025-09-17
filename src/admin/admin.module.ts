@@ -1,0 +1,27 @@
+import { Module } from '@nestjs/common';
+import { AdminCommonModule } from './common/common.module';
+import { UsersModule } from './users/users.module';
+import { KycModule } from './kyc/kyc.module';
+import { ListingsModule } from './listings/listings.module';
+import { DashboardModule } from './dashboard/dashboard.module';
+import { AuditModule } from './audit/audit.module';
+import { AdminCategoriesModule } from './categories/categories.module';
+import { AdminBrandsModule } from './brands/brands.module';
+import { AdminProductsModule } from './products/products.module';
+import { AdminCountsModule } from './counts/counts.module';
+
+@Module({
+  imports: [
+    AdminCommonModule,
+    UsersModule,
+    KycModule,
+    ListingsModule,
+    DashboardModule,
+    AuditModule,
+    AdminCategoriesModule,
+    AdminBrandsModule,
+    AdminProductsModule,
+    AdminCountsModule,
+  ],
+})
+export class AdminModule {}
