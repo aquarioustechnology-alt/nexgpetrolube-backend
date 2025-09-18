@@ -143,15 +143,16 @@ export class AuthService {
         role: registerDto.role || 'BUYER',
         password: hashedPassword,
         isActive: true,
+        kycStatus: registerDto.kycStatus || 'PENDING',
       },
     });
 
-    // Create default address if provided
+    // Create communication address if provided
     if (registerDto.address) {
       await this.prisma.address.create({
         data: {
           userId: user.id,
-          type: 'company',
+          type: 'communication',
           line1: registerDto.address.line1,
           line2: registerDto.address.line2,
           city: registerDto.address.city,
@@ -163,11 +164,72 @@ export class AuthService {
       });
     }
 
-    // Handle uploaded files - store filenames in user profile or create KYC record
-    if (registerDto.uploadedFiles) {
-      // For now, we'll just log the uploaded files
-      // In a real application, you might want to create a KYC record or store in user profile
-      console.log('Uploaded files for user:', user.id, registerDto.uploadedFiles);
+    // Create delivery address if provided
+    if (registerDto.deliveryAddress) {
+      await this.prisma.address.create({
+        data: {
+          userId: user.id,
+          type: 'delivery',
+          line1: registerDto.deliveryAddress.line1,
+          line2: registerDto.deliveryAddress.line2,
+          city: registerDto.deliveryAddress.city,
+          state: registerDto.deliveryAddress.state,
+          country: registerDto.deliveryAddress.country || 'India',
+          pincode: registerDto.deliveryAddress.pincode,
+          isDefault: false,
+        },
+      });
+    }
+
+    // Create KYC record if KYC data is provided
+    if (registerDto.kycStatus === 'PENDING' && (registerDto.gstNumber || registerDto.panNumber || registerDto.aadhaarNumber)) {
+      const kycRecord = await this.prisma.kyc.create({
+        data: {
+          userId: user.id,
+          panNumber: registerDto.panNumber,
+          aadhaarNumber: registerDto.aadhaarNumber,
+          gstNumber: registerDto.gstNumber,
+          kycStatus: 'PENDING',
+        },
+      });
+
+      // Create KYC documents if uploaded files are provided
+      if (registerDto.uploadedFiles) {
+        const documentTypes = [
+          { key: 'authorizationLetter', type: 'authorization-letter' },
+          { key: 'panDocument', type: 'pan-card' },
+          { key: 'aadhaarDocument', type: 'aadhaar-card' },
+          { key: 'gstCertificate', type: 'gst-certificate' },
+          { key: 'companyRegistration', type: 'company-registration' },
+          { key: 'bankStatement', type: 'bank-statement' },
+          { key: 'addressProof', type: 'address-proof' },
+        ];
+
+        for (const doc of documentTypes) {
+          if (registerDto.uploadedFiles[doc.key as keyof typeof registerDto.uploadedFiles]) {
+            await this.prisma.kycDocument.create({
+              data: {
+                kycId: kycRecord.id,
+                type: doc.type,
+                fileName: registerDto.uploadedFiles[doc.key as keyof typeof registerDto.uploadedFiles]!,
+                fileUrl: `/uploads/${registerDto.uploadedFiles[doc.key as keyof typeof registerDto.uploadedFiles]!}`,
+                fileSize: 0, // Will be updated when file is processed
+                mimeType: 'application/octet-stream', // Will be updated when file is processed
+              },
+            });
+          }
+        }
+      }
+    }
+
+    // Update user profile image if provided
+    if (registerDto.uploadedFiles?.profilePicture) {
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          profileImage: `/uploads/${registerDto.uploadedFiles.profilePicture}`,
+        },
+      });
     }
 
     const { password: _, ...userWithoutPassword } = user;

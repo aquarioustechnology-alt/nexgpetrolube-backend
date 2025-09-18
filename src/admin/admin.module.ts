@@ -9,6 +9,7 @@ import { AdminCategoriesModule } from './categories/categories.module';
 import { AdminBrandsModule } from './brands/brands.module';
 import { AdminProductsModule } from './products/products.module';
 import { AdminCountsModule } from './counts/counts.module';
+import { AdminRequirementsModule } from './requirements/requirements.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { AdminCountsModule } from './counts/counts.module';
     AdminBrandsModule,
     AdminProductsModule,
     AdminCountsModule,
+    AdminRequirementsModule,
   ],
 })
 export class AdminModule {}

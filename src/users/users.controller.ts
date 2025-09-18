@@ -14,6 +14,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@ne
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { KycSubmissionDto } from './dto/kyc-submission.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -64,10 +65,10 @@ export class UsersController {
   }
 
   @Get('profile')
-  @ApiOperation({ summary: 'Get current user profile' })
+  @ApiOperation({ summary: 'Get current user profile with KYC details' })
   @ApiResponse({ status: 200, description: 'User profile retrieved successfully' })
   getProfile(@CurrentUser() user: any) {
-    return this.usersService.findOne(user.sub);
+    return this.usersService.getUserDetails(user.sub);
   }
 
   @Get(':id')
@@ -88,6 +89,14 @@ export class UsersController {
   @ApiResponse({ status: 404, description: 'User not found' })
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     return this.usersService.update(id, updateUserDto);
+  }
+
+  @Post('kyc-submission')
+  @ApiOperation({ summary: 'Submit KYC documents for current user' })
+  @ApiResponse({ status: 201, description: 'KYC submitted successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  submitKyc(@CurrentUser() user: any, @Body() kycData: KycSubmissionDto) {
+    return this.usersService.submitKyc(user.sub, kycData);
   }
 
   @Patch(':id/kyc-status')

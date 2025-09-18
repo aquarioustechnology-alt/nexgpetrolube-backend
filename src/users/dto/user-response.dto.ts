@@ -25,6 +25,9 @@ export class UserResponseDto {
   @ApiProperty({ description: 'KYC status', enum: ['NOT_SUBMITTED', 'PENDING', 'APPROVED', 'REJECTED'] })
   kycStatus: string;
 
+  @ApiProperty({ description: 'KYC rejection reason', required: false })
+  kycRejectionReason?: string;
+
   @ApiProperty({ description: 'Whether the user is active' })
   isActive: boolean;
 

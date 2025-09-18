@@ -15,7 +15,7 @@ model User {
   lastName        String?
   companyName     String
   role            UserRole       @default(BUYER)
-  kycStatus       KycStatus      @default(NOT_SUBMITTED)
+  kycStatus       KycStatus      @default(PENDING)
   isActive        Boolean        @default(true)
   isEmailVerified Boolean        @default(false)
   isPhoneVerified Boolean        @default(false)
@@ -130,9 +130,10 @@ model Category {
   children      Category[]    @relation("CategoryHierarchy")
   listings      Listing[]
   products      Product[]
-  requirements  Requirement[]
+  requirements  Requirement[] @relation("RequirementCategory")
   subcategories Subcategory[]
   productSubcategories Product[] @relation("ProductSubcategory")
+  requirementSubcategories Requirement[] @relation("RequirementSubcategory")
 
   @@map("categories")
 }
@@ -147,42 +148,41 @@ model Subcategory {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   listings     Listing[]
-  requirements Requirement[]
   category     Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
   @@map("subcategories")
 }
 
 model Brand {
-  id          String    @id @default(cuid())
-  name        String    @unique
+  id          String        @id @default(cuid())
+  name        String        @unique
   description String?
   logo        String?
-  isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  isActive    Boolean       @default(true)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
   listings    Listing[]
   products    Product[]
+  requirements Requirement[]
 
   @@map("brands")
 }
 
 model Unit {
-  id           String        @id @default(cuid())
-  name         String        @unique
-  symbol       String        @unique
+  id           String   @id @default(cuid())
+  name         String   @unique
+  symbol       String   @unique
   description  String?
-  isActive     Boolean       @default(true)
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
   listings     Listing[]
-  requirements Requirement[]
 
   @@map("units")
 }
 
 model Product {
-  id             String       @id @default(cuid())
+  id             String        @id @default(cuid())
   name           String
   description    String?
   keyFeatures    String?
@@ -190,12 +190,13 @@ model Product {
   categoryId     String
   subcategoryId  String?
   brandId        String?
-  isActive       Boolean      @default(true)
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  brand          Brand?       @relation(fields: [brandId], references: [id])
-  category       Category     @relation(fields: [categoryId], references: [id])
-  subcategory    Category?    @relation("ProductSubcategory", fields: [subcategoryId], references: [id])
+  isActive       Boolean       @default(true)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  brand          Brand?        @relation(fields: [brandId], references: [id])
+  category       Category      @relation(fields: [categoryId], references: [id])
+  subcategory    Category?     @relation("ProductSubcategory", fields: [subcategoryId], references: [id])
+  requirements   Requirement[]
 
   @@map("products")
 }
@@ -238,12 +239,20 @@ model Listing {
 model Requirement {
   id               String             @id @default(cuid())
   userId           String
+  userType         UserRole
   title            String
   description      String
+  shortDescription String?
+  additionalNotes  String?
   categoryId       String
   subcategoryId    String?
-  unitId           String
+  productId        String
+  brandId          String?
   quantity         String
+  unitPrice        String?
+  postingType      PostingType        @default(REQUIREMENT)
+  negotiableType   String?
+  negotiationWindow String?
   urgency          RequirementUrgency @default(MEDIUM)
   status           RequirementStatus  @default(OPEN)
   deliveryMethod   String
@@ -255,18 +264,27 @@ model Requirement {
   images           String[]
   visibility       String             @default("public")
   visibilityType   String?
-  selectedUsers    String[]           @default([])
-  selectedEmails   String[]           @default([])
+  visibleEmails    String[]           @default([])
+  visibleState     String?
+  visibleCity      String?
   quotesCount      Int                @default(0)
   deadline         DateTime?
   postedAt         DateTime           @default(now())
+  // Admin approval fields
+  adminStatus      RequirementStatus? @default(PENDING)
+  approvedBy       String?
+  approvedAt       DateTime?
+  rejectedBy       String?
+  rejectedAt       DateTime?
+  rejectionReason  String?
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
   auctions         Auction[]
   quotes           Quote[]
-  category         Category           @relation(fields: [categoryId], references: [id])
-  subcategory      Subcategory?       @relation(fields: [subcategoryId], references: [id])
-  unit             Unit               @relation(fields: [unitId], references: [id])
+  category         Category           @relation("RequirementCategory", fields: [categoryId], references: [id])
+  subcategory      Category?          @relation("RequirementSubcategory", fields: [subcategoryId], references: [id])
+  product          Product            @relation(fields: [productId], references: [id])
+  brand            Brand?             @relation(fields: [brandId], references: [id])
   user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("requirements")
@@ -493,6 +511,10 @@ enum ListingStatus {
 }
 
 enum RequirementStatus {
+  DRAFT
+  PENDING
+  APPROVED
+  REJECTED
   OPEN
   QUOTED
   CLOSED
@@ -504,6 +526,12 @@ enum RequirementUrgency {
   MEDIUM
   HIGH
   URGENT
+}
+
+enum PostingType {
+  REQUIREMENT
+  REVERSE_BIDDING
+  STANDARD_BIDDING
 }
 
 enum AuctionType {

@@ -98,6 +98,50 @@ export class RegisterDto {
   address?: AddressDto;
 
   @ApiProperty({
+    description: 'Delivery address',
+    type: AddressDto,
+    required: false,
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => AddressDto)
+  deliveryAddress?: AddressDto;
+
+  @ApiProperty({
+    description: 'GST number',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  gstNumber?: string;
+
+  @ApiProperty({
+    description: 'PAN number',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  panNumber?: string;
+
+  @ApiProperty({
+    description: 'Aadhaar number',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  aadhaarNumber?: string;
+
+  @ApiProperty({
+    description: 'KYC status',
+    enum: ['NOT_SUBMITTED', 'PENDING', 'APPROVED', 'REJECTED'],
+    default: 'PENDING',
+    required: false,
+  })
+  @IsOptional()
+  @IsEnum(['NOT_SUBMITTED', 'PENDING', 'APPROVED', 'REJECTED'])
+  kycStatus?: 'NOT_SUBMITTED' | 'PENDING' | 'APPROVED' | 'REJECTED';
+
+  @ApiProperty({
     description: 'Uploaded file filenames',
     required: false,
   })
@@ -107,5 +151,9 @@ export class RegisterDto {
     panDocument?: string;
     aadhaarDocument?: string;
     profilePicture?: string;
+    gstCertificate?: string;
+    companyRegistration?: string;
+    bankStatement?: string;
+    addressProof?: string;
   };
 }
