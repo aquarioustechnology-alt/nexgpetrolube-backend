@@ -284,11 +284,12 @@ async function main() {
     data: [
       {
         userId: buyerUser.id,
+        userType: 'BUYER',
         title: 'Engine Oil for Fleet Vehicles',
         description: 'Looking for bulk engine oil for fleet of 50 commercial vehicles',
         categoryId: engineOilCategory.id,
         subcategoryId: mineralSubcategory.id,
-        unitId: literUnit.id,
+        productId: 'default-product-id', // You'll need to create actual products first
         quantity: '2000L',
         urgency: 'HIGH',
         status: 'OPEN',
@@ -301,10 +302,11 @@ async function main() {
       },
       {
         userId: bothUser.id,
+        userType: 'SELLER',
         title: 'Gear Oil for Industrial Equipment',
         description: 'Heavy-duty gear oil for industrial machinery',
         categoryId: gearOilCategory.id,
-        unitId: literUnit.id,
+        productId: 'default-product-id', // You'll need to create actual products first
         quantity: '500L',
         urgency: 'MEDIUM',
         status: 'OPEN',

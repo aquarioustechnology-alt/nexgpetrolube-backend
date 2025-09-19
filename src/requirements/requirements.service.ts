@@ -522,4 +522,174 @@ export class RequirementsService {
     };
   }
 
+  async getDashboardListing(
+    userId: string,
+    userRole: string,
+    page: number = 1,
+    limit: number = 10,
+    status?: PrismaRequirementStatus,
+    postingType?: string,
+    search?: string,
+    userType?: string
+  ) {
+    const skip = (page - 1) * limit;
+    
+    // Build where clause based on user role and userType parameter
+    let whereClause: any = {};
+    
+    // Always filter by userId for security
+    whereClause.userId = userId;
+    
+    // Use userType parameter if provided, otherwise fall back to userRole
+    if (userType) {
+      whereClause.userType = userType;
+    } else {
+      // Fallback to role-based filtering
+      if (userRole === 'SELLER') {
+        whereClause.userType = 'SELLER';
+      } else if (userRole === 'BUYER') {
+        whereClause.userType = 'BUYER';
+      } else if (userRole === 'BOTH') {
+        whereClause.userType = { in: ['SELLER', 'BUYER'] };
+      } else {
+        // Admin or other roles see all requirements
+        delete whereClause.userType;
+      }
+    }
+
+    // Add status filter
+    if (status) {
+      whereClause.status = status;
+    }
+
+    // Add posting type filter
+    if (postingType) {
+      whereClause.postingType = postingType;
+    }
+
+    // Add search filter
+    if (search) {
+      whereClause.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+        { shortDescription: { contains: search, mode: 'insensitive' } },
+        { category: { name: { contains: search, mode: 'insensitive' } } },
+        { product: { name: { contains: search, mode: 'insensitive' } } }
+      ];
+    }
+
+    const [requirements, total] = await Promise.all([
+      this.prisma.requirement.findMany({
+        where: whereClause,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          category: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          subcategory: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          product: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          brand: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              companyName: true,
+              email: true,
+              role: true
+            }
+          }
+        }
+      }),
+      this.prisma.requirement.count({ where: whereClause })
+    ]);
+
+    return {
+      requirements: requirements.map(req => this.mapToResponseDto(req)),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    };
+  }
+
+  async getDashboardDetails(id: string, userId: string, userRole: string) {
+    const requirement = await this.prisma.requirement.findUnique({
+      where: { id },
+      include: {
+        category: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        subcategory: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        product: {
+          select: {
+            id: true,
+            name: true,
+            specifications: true
+          }
+        },
+        brand: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            companyName: true,
+            email: true,
+            phone: true,
+            role: true
+          }
+        }
+      }
+    });
+
+    if (!requirement) {
+      throw new NotFoundException('Requirement not found');
+    }
+
+    // Check if user has access to this requirement - only check userId ownership
+    if (userRole === 'SELLER' || userRole === 'BUYER' || userRole === 'BOTH') {
+      if (requirement.userId !== userId) {
+        throw new NotFoundException('Requirement not found');
+      }
+    }
+
+    return this.mapToResponseDto(requirement);
+  }
+
 }

@@ -68,6 +68,50 @@ export class RequirementsController {
     return this.requirementsService.findByUser(req.user.sub, page, limit);
   }
 
+  @Get('dashboard/listing')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get requirements for dashboard listing with role-based filtering' })
+  @ApiResponse({ status: 200, description: 'Requirements retrieved successfully' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page' })
+  @ApiQuery({ name: 'status', required: false, enum: RequirementStatus, description: 'Filter by status' })
+  @ApiQuery({ name: 'postingType', required: false, enum: ['REQUIREMENT', 'REVERSE_BIDDING', 'STANDARD_BIDDING'], description: 'Filter by posting type' })
+  @ApiQuery({ name: 'search', required: false, type: String, description: 'Search query' })
+  @ApiQuery({ name: 'userType', required: false, enum: ['SELLER', 'BUYER', 'BOTH'], description: 'Filter by user type' })
+  getDashboardListing(
+    @Request() req,
+    @Query('page') pageParam?: string,
+    @Query('limit') limitParam?: string,
+    @Query('status') status?: PrismaRequirementStatus,
+    @Query('postingType') postingType?: string,
+    @Query('search') search?: string,
+    @Query('userType') userType?: string
+  ) {
+    const page = pageParam ? parseInt(pageParam, 10) : 1;
+    const limit = limitParam ? parseInt(limitParam, 10) : 10;
+    return this.requirementsService.getDashboardListing(
+      req.user.sub, 
+      req.user.role, 
+      page, 
+      limit, 
+      status, 
+      postingType, 
+      search,
+      userType
+    );
+  }
+
+  @Get('dashboard/details/:id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get requirement details for dashboard' })
+  @ApiResponse({ status: 200, description: 'Requirement details retrieved successfully', type: RequirementResponseDto })
+  @ApiResponse({ status: 404, description: 'Requirement not found' })
+  getDashboardDetails(@Param('id') id: string, @Request() req) {
+    return this.requirementsService.getDashboardDetails(id, req.user.sub, req.user.role);
+  }
+
   @Get('dropdowns/categories')
   @ApiOperation({ summary: 'Get all categories for dropdown' })
   @ApiResponse({ status: 200, description: 'Categories retrieved successfully' })
