@@ -287,7 +287,7 @@ export class AdminRequirementsService {
       city: requirement.city,
       state: requirement.state,
       technicalSpecs: requirement.technicalSpecs,
-      images: requirement.photos || [],
+      images: requirement.images || [],
       visibility: requirement.visibility,
       visibilityType: requirement.visibilityType,
       visibleEmails: requirement.visibleEmails || [],
