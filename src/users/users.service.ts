@@ -7,7 +7,7 @@ import { KycSubmissionDto } from './dto/kyc-submission.dto';
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async create(createUserDto: CreateUserDto): Promise<UserResponseDto> {
     // Check if user already exists
@@ -33,9 +33,9 @@ export class UsersService {
 
   async findAll(page: number = 1, limit: number = 10, search?: string, role?: string) {
     const skip = (page - 1) * limit;
-    
+
     const where: any = {};
-    
+
     if (search) {
       where.OR = [
         { email: { contains: search, mode: 'insensitive' } },
@@ -104,67 +104,49 @@ export class UsersService {
   }
 
   async getUserDetails(id: string): Promise<UserResponseDto> {
-    try {
-      console.log('Getting user details for ID:', id);
-      
-      // Get basic user info first
-      const user = await this.prisma.user.findUnique({
-        where: { id },
-      });
-
-      if (!user) {
-        console.log('User not found for ID:', id);
-        throw new NotFoundException('User not found');
-      }
-
-      console.log('User found:', user.email);
-
-      // Get addresses
-      const addresses = await this.prisma.address.findMany({
-        where: { userId: id },
-      });
-
-      // Get KYC info
-      const kyc = await this.prisma.kyc.findUnique({
-        where: { userId: id },
-        include: {
-          documents: true,
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      include: {
+        addresses: true,
+        kyc: {
+          include: {
+            documents: true,
+          },
         },
-      });
+        bankDetails: true,
+        listings: {
+          take: 5,
+          orderBy: { createdAt: 'desc' },
+        },
+        requirements: {
+          take: 5,
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+    });
 
-      // Get bank details
-      const bankDetails = await this.prisma.bankDetail.findUnique({
-        where: { userId: id },
-      });
-
-      // Determine KYC status
-      let kycStatus = 'NOT_SUBMITTED';
-      let kycRejectionReason = null;
-
-      if (kyc) {
-        kycStatus = kyc.kycStatus;
-        kycRejectionReason = kyc.rejectionReason;
-      } else if (user.kycStatus && user.kycStatus !== 'NOT_SUBMITTED') {
-        kycStatus = user.kycStatus;
-      }
-
-      const userResponse = this.mapToResponseDto({
-        ...user,
-        addresses,
-        kyc,
-        bankDetails,
-        listings: [],
-        requirements: [],
-      });
-      userResponse.kycStatus = kycStatus as any;
-      userResponse.kycRejectionReason = kycRejectionReason;
-
-      console.log('User response created successfully');
-      return userResponse;
-    } catch (error) {
-      console.error('Error in getUserDetails:', error);
-      throw error;
+    if (!user) {
+      throw new NotFoundException('User not found');
     }
+
+    // Determine KYC status based on business logic
+    let kycStatus = 'NOT_SUBMITTED';
+    let kycRejectionReason = null;
+
+    if (user.kyc) {
+      // If KYC record exists, use its status
+      kycStatus = user.kyc.kycStatus;
+      kycRejectionReason = user.kyc.rejectionReason;
+    } else if (user.kycStatus && user.kycStatus !== 'NOT_SUBMITTED') {
+      // If no KYC record but user has a status, use user's status
+      kycStatus = user.kycStatus;
+    }
+
+    const userResponse = this.mapToResponseDto(user);
+    userResponse.kycStatus = kycStatus as any;
+    userResponse.kycRejectionReason = kycRejectionReason;
+
+    return userResponse;
   }
 
   async findByEmail(email: string): Promise<UserResponseDto | null> {
@@ -393,6 +375,7 @@ export class UsersService {
       },
     };
   }
+
 
   private mapToResponseDto(user: any): UserResponseDto {
     return {
