@@ -36,8 +36,11 @@ export class RequirementResponseDto {
   @ApiProperty({ required: false })
   brandId?: string;
 
-  @ApiProperty()
-  quantity: string;
+  @ApiProperty({ required: false })
+  quantity?: string;
+
+  @ApiProperty({ required: false })
+  units?: string;
 
   @ApiProperty({ required: false })
   unitPrice?: string;

@@ -248,7 +248,8 @@ model Requirement {
   subcategoryId    String?
   productId        String
   brandId          String?
-  quantity         String
+  quantity         String?
+  units            String?
   unitPrice        String?
   postingType      PostingType        @default(REQUIREMENT)
   negotiableType   String?
@@ -573,6 +574,30 @@ enum NotificationType {
   REQUIREMENT_QUOTED
   PAYMENT_SUCCESS
   PAYMENT_FAILED
+}
+
+enum UnitType {
+  LITERS
+  KILOGRAMS
+  TONS
+  PIECES
+  CARTONS
+  DRUMS
+  BARRELS
+  CUBIC_METERS
+  SQUARE_METERS
+  METERS
+  FEET
+  INCHES
+  GALLONS
+  POUNDS
+  OUNCES
+  GRAMS
+  MILLILITERS
+  CUBIC_FEET
+  SQUARE_FEET
+  YARDS
+  CUSTOM
 }
 
 enum AdminRole {

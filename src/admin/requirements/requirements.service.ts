@@ -216,7 +216,10 @@ export class AdminRequirementsService {
     return this.requirementsService.rejectRequirement(id, rejectionReason, adminId);
   }
 
-  async getAdminStats() {
+  async getAdminStats(userType?: 'BUYER' | 'SELLER' | 'BOTH') {
+    // Build base where clause for userType filtering
+    const baseWhere = userType ? { userType } : {};
+    
     const [
       totalRequirements,
       pendingRequirements,
@@ -227,15 +230,16 @@ export class AdminRequirementsService {
       closedRequirements,
       recentRequirements
     ] = await Promise.all([
-      this.prisma.requirement.count(),
-      this.prisma.requirement.count({ where: { adminStatus: 'PENDING' } }),
-      this.prisma.requirement.count({ where: { adminStatus: 'APPROVED' } }),
-      this.prisma.requirement.count({ where: { adminStatus: 'REJECTED' } }),
-      this.prisma.requirement.count({ where: { status: 'DRAFT' } }),
-      this.prisma.requirement.count({ where: { status: 'OPEN' } }),
-      this.prisma.requirement.count({ where: { status: 'CLOSED' } }),
+      this.prisma.requirement.count({ where: baseWhere }),
+      this.prisma.requirement.count({ where: { ...baseWhere, adminStatus: 'PENDING' } }),
+      this.prisma.requirement.count({ where: { ...baseWhere, adminStatus: 'APPROVED' } }),
+      this.prisma.requirement.count({ where: { ...baseWhere, adminStatus: 'REJECTED' } }),
+      this.prisma.requirement.count({ where: { ...baseWhere, status: 'DRAFT' } }),
+      this.prisma.requirement.count({ where: { ...baseWhere, status: 'OPEN' } }),
+      this.prisma.requirement.count({ where: { ...baseWhere, status: 'CLOSED' } }),
       this.prisma.requirement.count({ 
         where: { 
+          ...baseWhere,
           createdAt: { 
             gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // Last 7 days
           } 

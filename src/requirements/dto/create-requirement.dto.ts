@@ -68,9 +68,15 @@ export class CreateRequirementDto {
   @IsString()
   brandId?: string;
 
-  @ApiProperty({ description: 'Quantity required' })
+  @ApiProperty({ description: 'Quantity required', required: false })
+  @IsOptional()
   @IsString()
-  quantity: string;
+  quantity?: string;
+
+  @ApiProperty({ description: 'Units for the quantity', required: false })
+  @IsOptional()
+  @IsString()
+  units?: string;
 
   @ApiProperty({ description: 'Unit price or expected price', required: false })
   @IsOptional()

@@ -127,7 +127,8 @@ export class AdminRequirementsController {
   @MODERATOR_AND_ABOVE
   @ApiOperation({ summary: 'Get requirements statistics for admin dashboard' })
   @ApiResponse({ status: 200, description: 'Statistics retrieved successfully' })
-  getStats() {
-    return this.adminRequirementsService.getAdminStats();
+  @ApiQuery({ name: 'userType', required: false, enum: ['BUYER', 'SELLER', 'BOTH'], description: 'Filter by user type' })
+  getStats(@Query('userType') userType?: 'BUYER' | 'SELLER' | 'BOTH') {
+    return this.adminRequirementsService.getAdminStats(userType);
   }
 }
