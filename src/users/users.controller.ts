@@ -64,11 +64,32 @@ export class UsersController {
     return this.usersService.getStats();
   }
 
+  @Get('test-db')
+  @ApiOperation({ summary: 'Test database connection' })
+  @ApiResponse({ status: 200, description: 'Database connection test' })
+  async testDb() {
+    try {
+      const userCount = await this.usersService.testDatabaseConnection();
+      return { message: 'Database connection successful', userCount };
+    } catch (error) {
+      console.error('Database test error:', error);
+      return { message: 'Database connection failed', error: error.message };
+    }
+  }
+
   @Get('profile')
   @ApiOperation({ summary: 'Get current user profile with KYC details' })
   @ApiResponse({ status: 200, description: 'User profile retrieved successfully' })
-  getProfile(@CurrentUser() user: any) {
-    return this.usersService.getUserDetails(user.sub);
+  async getProfile(@CurrentUser() user: any) {
+    try {
+      console.log('Profile endpoint called with user:', user);
+      const result = await this.usersService.getUserDetails(user.sub);
+      console.log('Profile endpoint result:', result);
+      return result;
+    } catch (error) {
+      console.error('Profile endpoint error:', error);
+      throw error;
+    }
   }
 
   @Get(':id')
