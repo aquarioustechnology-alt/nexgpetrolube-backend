@@ -273,7 +273,6 @@ export class AdminRequirementsService {
       categoryId: requirement.categoryId,
       subcategoryId: requirement.subcategoryId,
       productId: requirement.productId,
-      brandId: requirement.brandId,
       productName: requirement.productName,
       brandName: requirement.brandName,
       quantity: requirement.quantity,
