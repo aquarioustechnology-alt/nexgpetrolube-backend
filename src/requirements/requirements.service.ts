@@ -41,23 +41,22 @@ export class RequirementsService {
       }
     }
 
-    // Validate product (now required)
-    const product = await this.prisma.product.findUnique({
-      where: { id: createRequirementDto.productId }
-    });
-    if (!product) {
-      throw new BadRequestException('Invalid product ID');
-    }
-
-    // Validate brand if provided
-    if (createRequirementDto.brandId) {
-      const brand = await this.prisma.brand.findUnique({
-        where: { id: createRequirementDto.brandId }
+    // Validate product if productId is provided
+    if (createRequirementDto.productId) {
+      const product = await this.prisma.product.findUnique({
+        where: { id: createRequirementDto.productId }
       });
-      if (!brand) {
-        throw new BadRequestException('Invalid brand ID');
+      if (!product) {
+        throw new BadRequestException('Invalid product ID');
       }
     }
+
+    // Validate that either productId or productName is provided
+    if (!createRequirementDto.productId && !createRequirementDto.productName) {
+      throw new BadRequestException('Either productId or productName must be provided');
+    }
+
+    // Brand validation is not needed since we're using brandName directly
 
 
     // Create the requirement
@@ -71,8 +70,10 @@ export class RequirementsService {
       categoryId: createRequirementDto.categoryId,
       subcategoryId: createRequirementDto.subcategoryId,
       productId: createRequirementDto.productId,
-      brandId: createRequirementDto.brandId,
+      productName: createRequirementDto.productName,
+      brandName: createRequirementDto.brandName,
       quantity: createRequirementDto.quantity,
+      units: createRequirementDto.units,
       unitPrice: createRequirementDto.unitPrice,
       postingType: createRequirementDto.postingType,
       negotiableType: createRequirementDto.negotiableType,
@@ -342,6 +343,7 @@ export class RequirementsService {
   }
 
 
+
   async getProductSpecifications(productId: string) {
     const product = await this.prisma.product.findUnique({
       where: { id: productId },
@@ -483,8 +485,10 @@ export class RequirementsService {
       categoryId: requirement.categoryId,
       subcategoryId: requirement.subcategoryId,
       productId: requirement.productId,
-      brandId: requirement.brandId,
+      productName: requirement.productName,
+      brandName: requirement.brandName,
       quantity: requirement.quantity,
+      units: requirement.units,
       unitPrice: requirement.unitPrice,
       postingType: requirement.postingType,
       negotiableType: requirement.negotiableType,
@@ -690,6 +694,132 @@ export class RequirementsService {
     }
 
     return this.mapToResponseDto(requirement);
+  }
+
+  async getPublicListing(params: {
+    page: number;
+    limit: number;
+    search?: string;
+    userType?: string;
+    postingType?: string;
+    category?: string;
+    sortBy?: string;
+    sortOrder?: string;
+  }) {
+    const { page, limit, search, userType, postingType, category, sortBy, sortOrder } = params;
+    const skip = (page - 1) * limit;
+    
+    // Build where clause for public listing
+    let whereClause: any = {
+      // Only show approved and open requirements publicly
+      adminStatus: 'APPROVED',
+      status: 'OPEN' // Always show only open requirements
+    };
+    
+    // Add user type filter
+    if (userType) {
+      whereClause.userType = userType;
+    }
+    
+    // Add posting type filter
+    if (postingType) {
+      whereClause.postingType = postingType;
+    }
+    
+    // Add category filter
+    if (category) {
+      whereClause.category = {
+        name: { contains: category, mode: 'insensitive' }
+      };
+    }
+    
+    // Add search filter
+    if (search) {
+      whereClause.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+        { shortDescription: { contains: search, mode: 'insensitive' } },
+        { productName: { contains: search, mode: 'insensitive' } },
+        { brandName: { contains: search, mode: 'insensitive' } },
+        { category: { name: { contains: search, mode: 'insensitive' } } },
+        { subcategory: { name: { contains: search, mode: 'insensitive' } } }
+      ];
+    }
+    
+    // Build order by clause
+    let orderBy: any = {};
+    if (sortBy && sortOrder) {
+      orderBy[sortBy] = sortOrder;
+    } else {
+      orderBy = { createdAt: 'desc' }; // Default sort
+    }
+    
+    const [requirements, total] = await Promise.all([
+      this.prisma.requirement.findMany({
+        where: whereClause,
+        skip,
+        take: limit,
+        orderBy,
+        include: {
+          category: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          subcategory: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          product: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          brand: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              companyName: true,
+              email: true,
+              role: true
+            }
+          }
+        }
+      }),
+      this.prisma.requirement.count({ where: whereClause })
+    ]);
+    
+    return {
+      requirements: requirements.map(req => this.mapToResponseDto(req)),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+        hasNextPage: page < Math.ceil(total / limit),
+        hasPrevPage: page > 1
+      },
+      filters: {
+        search: search || null,
+        userType: userType || null,
+        postingType: postingType || null,
+        status: 'OPEN', // Always OPEN for public API
+        category: category || null,
+        sortBy: sortBy || 'createdAt',
+        sortOrder: sortOrder || 'desc'
+      }
+    };
   }
 
 }

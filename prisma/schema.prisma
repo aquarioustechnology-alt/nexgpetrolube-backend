@@ -246,8 +246,10 @@ model Requirement {
   additionalNotes  String?
   categoryId       String
   subcategoryId    String?
-  productId        String
+  productId        String?
+  productName      String?
   brandId          String?
+  brandName        String?
   quantity         String?
   units            String?
   unitPrice        String?
@@ -284,7 +286,7 @@ model Requirement {
   quotes           Quote[]
   category         Category           @relation("RequirementCategory", fields: [categoryId], references: [id])
   subcategory      Category?          @relation("RequirementSubcategory", fields: [subcategoryId], references: [id])
-  product          Product            @relation(fields: [productId], references: [id])
+  product          Product?           @relation(fields: [productId], references: [id])
   brand            Brand?             @relation(fields: [brandId], references: [id])
   user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
 

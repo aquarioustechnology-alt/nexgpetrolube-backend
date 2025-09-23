@@ -59,14 +59,20 @@ export class CreateRequirementDto {
   @IsString()
   subcategoryId?: string;
 
-  @ApiProperty({ description: 'Product ID' })
-  @IsString()
-  productId: string;
-
-  @ApiProperty({ description: 'Brand ID', required: false })
+  @ApiProperty({ description: 'Product ID', required: false })
   @IsOptional()
   @IsString()
-  brandId?: string;
+  productId?: string;
+
+  @ApiProperty({ description: 'Product name (if not selecting from existing products)', required: false })
+  @IsOptional()
+  @IsString()
+  productName?: string;
+
+  @ApiProperty({ description: 'Brand name', required: false })
+  @IsOptional()
+  @IsString()
+  brandName?: string;
 
   @ApiProperty({ description: 'Quantity required', required: false })
   @IsOptional()

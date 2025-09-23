@@ -15,6 +15,7 @@ import { RequirementsService } from './requirements.service';
 import { CreateRequirementDto } from './dto/create-requirement.dto';
 import { UpdateRequirementDto } from './dto/update-requirement.dto';
 import { RequirementResponseDto } from './dto/requirement-response.dto';
+import { PublicListingResponseDto } from './dto/public-listing-response.dto';
 import { ApproveRequirementDto, RejectRequirementDto } from './dto/admin-approval.dto';
 import { RequirementStatus } from './dto/create-requirement.dto';
 import { RequirementStatus as PrismaRequirementStatus } from '@prisma/client';
@@ -49,6 +50,44 @@ export class RequirementsController {
     const page = pageParam ? parseInt(pageParam, 10) : 1;
     const limit = limitParam ? parseInt(limitParam, 10) : 10;
     return this.requirementsService.findAll(page, limit, status);
+  }
+
+  @Get('public')
+  @ApiOperation({ summary: 'Get public requirements listing with search and filters' })
+  @ApiResponse({ status: 200, description: 'Public requirements retrieved successfully', type: PublicListingResponseDto })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number (default: 1)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (default: 10, max: 100)' })
+  @ApiQuery({ name: 'search', required: false, type: String, description: 'Search query for title, description, or product name' })
+  @ApiQuery({ name: 'userType', required: false, enum: ['SELLER', 'BUYER'], description: 'Filter by user type' })
+  @ApiQuery({ name: 'postingType', required: false, enum: ['REQUIREMENT', 'REVERSE_BIDDING', 'STANDARD_BIDDING'], description: 'Filter by posting type' })
+  @ApiQuery({ name: 'category', required: false, type: String, description: 'Filter by category name' })
+  @ApiQuery({ name: 'sortBy', required: false, enum: ['createdAt', 'updatedAt', 'title', 'unitPrice'], description: 'Sort field (default: createdAt)' })
+  @ApiQuery({ name: 'sortOrder', required: false, enum: ['asc', 'desc'], description: 'Sort order (default: desc)' })
+  getPublicListing(
+    @Query('page') pageParam?: string,
+    @Query('limit') limitParam?: string,
+    @Query('search') search?: string,
+    @Query('userType') userType?: string,
+    @Query('postingType') postingType?: string,
+    @Query('category') category?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: string
+  ) {
+    const page = pageParam ? parseInt(pageParam, 10) : 1;
+    const limit = Math.min(limitParam ? parseInt(limitParam, 10) : 10, 100); // Max 100 items per page
+    const sortField = sortBy || 'createdAt';
+    const sortDirection = sortOrder || 'desc';
+    
+    return this.requirementsService.getPublicListing({
+      page,
+      limit,
+      search,
+      userType,
+      postingType,
+      category,
+      sortBy: sortField,
+      sortOrder: sortDirection
+    });
   }
 
   @Get('my-requirements')

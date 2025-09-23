@@ -30,11 +30,14 @@ export class RequirementResponseDto {
   @ApiProperty({ required: false })
   subcategoryId?: string;
 
-  @ApiProperty()
-  productId: string;
+  @ApiProperty({ required: false })
+  productId?: string;
 
   @ApiProperty({ required: false })
-  brandId?: string;
+  productName?: string;
+
+  @ApiProperty({ required: false })
+  brandName?: string;
 
   @ApiProperty({ required: false })
   quantity?: string;

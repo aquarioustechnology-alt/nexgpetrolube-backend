@@ -48,7 +48,7 @@ export class AdminRequirementsController {
   })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number (default: 1)' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (default: 10, max: 100)' })
-  @ApiQuery({ name: 'search', required: false, type: String, description: 'Search in title, description, or user info' })
+  @ApiQuery({ name: 'search', required: false, type: String, description: 'Search in title, description, product name, brand name, or user info' })
   @ApiQuery({ name: 'status', required: false, enum: ['DRAFT', 'PENDING', 'APPROVED', 'REJECTED', 'OPEN', 'QUOTED', 'CLOSED', 'CANCELLED'], description: 'Filter by requirement status' })
   @ApiQuery({ name: 'adminStatus', required: false, enum: ['PENDING', 'APPROVED', 'REJECTED'], description: 'Filter by admin approval status' })
   @ApiQuery({ name: 'postingType', required: false, enum: ['REQUIREMENT', 'REVERSE_BIDDING', 'STANDARD_BIDDING'], description: 'Filter by posting type' })

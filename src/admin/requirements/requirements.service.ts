@@ -63,6 +63,8 @@ export class AdminRequirementsService {
         { title: { contains: search, mode: 'insensitive' } },
         { shortDescription: { contains: search, mode: 'insensitive' } },
         { detailedDescription: { contains: search, mode: 'insensitive' } },
+        { productName: { contains: search, mode: 'insensitive' } },
+        { brandName: { contains: search, mode: 'insensitive' } },
         { 
           user: {
             OR: [
@@ -272,7 +274,10 @@ export class AdminRequirementsService {
       subcategoryId: requirement.subcategoryId,
       productId: requirement.productId,
       brandId: requirement.brandId,
+      productName: requirement.productName,
+      brandName: requirement.brandName,
       quantity: requirement.quantity,
+      units: requirement.units,
       unitPrice: requirement.unitPrice,
       postingType: requirement.postingType,
       negotiableType: requirement.negotiableType,
