@@ -705,8 +705,12 @@ export class RequirementsService {
     category?: string;
     sortBy?: string;
     sortOrder?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    state?: string;
+    city?: string;
   }) {
-    const { page, limit, search, userType, postingType, category, sortBy, sortOrder } = params;
+    const { page, limit, search, userType, postingType, category, sortBy, sortOrder, minPrice, maxPrice, state, city } = params;
     const skip = (page - 1) * limit;
     
     // Build where clause for public listing
@@ -733,6 +737,28 @@ export class RequirementsService {
       };
     }
     
+    // Add price range filter - ensure unitPrice is not null
+    if (minPrice !== undefined || maxPrice !== undefined) {
+      whereClause.unitPrice = {
+        not: null
+      };
+    }
+    
+    // Add location filters
+    if (state) {
+      whereClause.state = {
+        contains: state,
+        mode: 'insensitive'
+      };
+    }
+    
+    if (city) {
+      whereClause.city = {
+        contains: city,
+        mode: 'insensitive'
+      };
+    }
+    
     // Add search filter
     if (search) {
       whereClause.OR = [
@@ -754,11 +780,13 @@ export class RequirementsService {
       orderBy = { createdAt: 'desc' }; // Default sort
     }
     
-    const [requirements, total] = await Promise.all([
-      this.prisma.requirement.findMany({
+    // Handle price filtering separately since unitPrice is stored as string
+    let requirements, total;
+    
+    if (minPrice !== undefined || maxPrice !== undefined) {
+      // For price filtering, we need to fetch more data and filter in application layer
+      const allRequirements = await this.prisma.requirement.findMany({
         where: whereClause,
-        skip,
-        take: limit,
         orderBy,
         include: {
           category: {
@@ -796,9 +824,71 @@ export class RequirementsService {
             }
           }
         }
-      }),
-      this.prisma.requirement.count({ where: whereClause })
-    ]);
+      });
+      
+      // Filter by price range in application layer
+      const filteredRequirements = allRequirements.filter(req => {
+        if (!req.unitPrice) return false;
+        const price = parseFloat(req.unitPrice);
+        if (isNaN(price)) return false;
+        
+        if (minPrice !== undefined && price < minPrice) return false;
+        if (maxPrice !== undefined && price > maxPrice) return false;
+        
+        return true;
+      });
+      
+      // Apply pagination to filtered results
+      total = filteredRequirements.length;
+      requirements = filteredRequirements.slice(skip, skip + limit);
+    } else {
+      // Normal query without price filtering
+      [requirements, total] = await Promise.all([
+        this.prisma.requirement.findMany({
+          where: whereClause,
+          skip,
+          take: limit,
+          orderBy,
+          include: {
+            category: {
+              select: {
+                id: true,
+                name: true
+              }
+            },
+            subcategory: {
+              select: {
+                id: true,
+                name: true
+              }
+            },
+            product: {
+              select: {
+                id: true,
+                name: true
+              }
+            },
+            brand: {
+              select: {
+                id: true,
+                name: true
+              }
+            },
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                companyName: true,
+                email: true,
+                role: true
+              }
+            }
+          }
+        }),
+        this.prisma.requirement.count({ where: whereClause })
+      ]);
+    }
     
     return {
       requirements: requirements.map(req => this.mapToResponseDto(req)),

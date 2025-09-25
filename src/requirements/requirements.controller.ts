@@ -63,6 +63,10 @@ export class RequirementsController {
   @ApiQuery({ name: 'category', required: false, type: String, description: 'Filter by category name' })
   @ApiQuery({ name: 'sortBy', required: false, enum: ['createdAt', 'updatedAt', 'title', 'unitPrice'], description: 'Sort field (default: createdAt)' })
   @ApiQuery({ name: 'sortOrder', required: false, enum: ['asc', 'desc'], description: 'Sort order (default: desc)' })
+  @ApiQuery({ name: 'minPrice', required: false, type: Number, description: 'Minimum unit price filter' })
+  @ApiQuery({ name: 'maxPrice', required: false, type: Number, description: 'Maximum unit price filter' })
+  @ApiQuery({ name: 'state', required: false, type: String, description: 'Filter by state' })
+  @ApiQuery({ name: 'city', required: false, type: String, description: 'Filter by city' })
   getPublicListing(
     @Query('page') pageParam?: string,
     @Query('limit') limitParam?: string,
@@ -71,12 +75,18 @@ export class RequirementsController {
     @Query('postingType') postingType?: string,
     @Query('category') category?: string,
     @Query('sortBy') sortBy?: string,
-    @Query('sortOrder') sortOrder?: string
+    @Query('sortOrder') sortOrder?: string,
+    @Query('minPrice') minPriceParam?: string,
+    @Query('maxPrice') maxPriceParam?: string,
+    @Query('state') state?: string,
+    @Query('city') city?: string
   ) {
     const page = pageParam ? parseInt(pageParam, 10) : 1;
     const limit = Math.min(limitParam ? parseInt(limitParam, 10) : 10, 100); // Max 100 items per page
     const sortField = sortBy || 'createdAt';
     const sortDirection = sortOrder || 'desc';
+    const minPrice = minPriceParam ? parseFloat(minPriceParam) : undefined;
+    const maxPrice = maxPriceParam ? parseFloat(maxPriceParam) : undefined;
     
     return this.requirementsService.getPublicListing({
       page,
@@ -86,7 +96,11 @@ export class RequirementsController {
       postingType,
       category,
       sortBy: sortField,
-      sortOrder: sortDirection
+      sortOrder: sortDirection,
+      minPrice,
+      maxPrice,
+      state,
+      city
     });
   }
 
