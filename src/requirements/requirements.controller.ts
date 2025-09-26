@@ -60,6 +60,7 @@ export class RequirementsController {
   @ApiQuery({ name: 'search', required: false, type: String, description: 'Search query for title, description, or product name' })
   @ApiQuery({ name: 'userType', required: false, enum: ['SELLER', 'BUYER'], description: 'Filter by user type' })
   @ApiQuery({ name: 'postingType', required: false, enum: ['REQUIREMENT', 'REVERSE_BIDDING', 'STANDARD_BIDDING'], description: 'Filter by posting type' })
+  @ApiQuery({ name: 'negotiableType', required: false, enum: ['negotiable', 'non_negotiable'], description: 'Filter by negotiable type' })
   @ApiQuery({ name: 'category', required: false, type: String, description: 'Filter by category name' })
   @ApiQuery({ name: 'sortBy', required: false, enum: ['createdAt', 'updatedAt', 'title', 'unitPrice'], description: 'Sort field (default: createdAt)' })
   @ApiQuery({ name: 'sortOrder', required: false, enum: ['asc', 'desc'], description: 'Sort order (default: desc)' })
@@ -73,6 +74,7 @@ export class RequirementsController {
     @Query('search') search?: string,
     @Query('userType') userType?: string,
     @Query('postingType') postingType?: string,
+    @Query('negotiableType') negotiableType?: string,
     @Query('category') category?: string,
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: string,
@@ -94,6 +96,7 @@ export class RequirementsController {
       search,
       userType,
       postingType,
+      negotiableType,
       category,
       sortBy: sortField,
       sortOrder: sortDirection,

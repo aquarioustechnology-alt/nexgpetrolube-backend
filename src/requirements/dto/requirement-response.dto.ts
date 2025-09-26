@@ -43,6 +43,9 @@ export class RequirementResponseDto {
   quantity?: string;
 
   @ApiProperty({ required: false })
+  availableQuantity?: string;
+
+  @ApiProperty({ required: false })
   units?: string;
 
   @ApiProperty({ required: false })

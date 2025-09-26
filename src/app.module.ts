@@ -15,6 +15,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { AdminModule } from './admin/admin.module';
 import { UploadModule } from './upload/upload.module';
 import { WebsocketModule } from './websocket/websocket.module';
+import { OffersModule } from './offers/offers.module';
 import { CommonModule } from './common/common.module';
 import { AppConfigModule } from './config/app.config';
 
@@ -51,6 +52,7 @@ import { AppConfigModule } from './config/app.config';
     QuotesModule,
     CategoriesModule,
     NotificationsModule,
+    OffersModule,
     AdminModule,
     UploadModule,
     WebsocketModule,

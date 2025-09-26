@@ -73,6 +73,7 @@ export class RequirementsService {
       productName: createRequirementDto.productName,
       brandName: createRequirementDto.brandName,
       quantity: createRequirementDto.quantity,
+      availableQuantity: createRequirementDto.quantity, // Auto-set to same as quantity
       units: createRequirementDto.units,
       unitPrice: createRequirementDto.unitPrice,
       postingType: createRequirementDto.postingType,
@@ -233,6 +234,12 @@ export class RequirementsService {
     }
 
     const updateData: any = { ...updateRequirementDto };
+    
+    // Auto-set availableQuantity to same as quantity when quantity is updated
+    if (updateRequirementDto.quantity !== undefined) {
+      updateData.availableQuantity = updateRequirementDto.quantity;
+    }
+    
     if (updateRequirementDto.deadline) {
       updateData.deadline = new Date(updateRequirementDto.deadline);
     }
@@ -488,6 +495,7 @@ export class RequirementsService {
       productName: requirement.productName,
       brandName: requirement.brandName,
       quantity: requirement.quantity,
+      availableQuantity: requirement.availableQuantity,
       units: requirement.units,
       unitPrice: requirement.unitPrice,
       postingType: requirement.postingType,
@@ -702,6 +710,7 @@ export class RequirementsService {
     search?: string;
     userType?: string;
     postingType?: string;
+    negotiableType?: string;
     category?: string;
     sortBy?: string;
     sortOrder?: string;
@@ -710,7 +719,7 @@ export class RequirementsService {
     state?: string;
     city?: string;
   }) {
-    const { page, limit, search, userType, postingType, category, sortBy, sortOrder, minPrice, maxPrice, state, city } = params;
+    const { page, limit, search, userType, postingType, negotiableType, category, sortBy, sortOrder, minPrice, maxPrice, state, city } = params;
     const skip = (page - 1) * limit;
     
     // Build where clause for public listing
@@ -728,6 +737,11 @@ export class RequirementsService {
     // Add posting type filter
     if (postingType) {
       whereClause.postingType = postingType;
+    }
+    
+    // Add negotiable type filter
+    if (negotiableType) {
+      whereClause.negotiableType = negotiableType;
     }
     
     // Add category filter

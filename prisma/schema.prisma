@@ -32,6 +32,10 @@ model User {
   quotes          Quote[]
   requirements    Requirement[]
   wishlist        WishlistItem[]
+  offers          Offer[]           @relation("UserOffers")
+  requirementOwnerOffers Offer[]    @relation("RequirementOwnerOffers")
+  offerHistory    OfferHistory[]    @relation("UserOfferHistory")
+  offerNotifications OfferNotification[] @relation("UserOfferNotifications")
 
   @@map("users")
 }
@@ -251,6 +255,7 @@ model Requirement {
   brandId          String?
   brandName        String?
   quantity         String?
+  availableQuantity String?
   units            String?
   unitPrice        String?
   postingType      PostingType        @default(REQUIREMENT)
@@ -284,6 +289,7 @@ model Requirement {
   updatedAt        DateTime           @updatedAt
   auctions         Auction[]
   quotes           Quote[]
+  offers           Offer[]            @relation("RequirementOffers")
   category         Category           @relation("RequirementCategory", fields: [categoryId], references: [id])
   subcategory      Category?          @relation("RequirementSubcategory", fields: [subcategoryId], references: [id])
   product          Product?           @relation(fields: [productId], references: [id])
@@ -576,6 +582,111 @@ enum NotificationType {
   REQUIREMENT_QUOTED
   PAYMENT_SUCCESS
   PAYMENT_FAILED
+}
+
+model Offer {
+  id                   String           @id @default(cuid())
+  requirementId        String
+  requirementOwnerType UserRole
+  offeredUnitPrice     Decimal          @db.Decimal(10, 2)
+  offeredQuantity      String
+  requirementOwnerId   String
+  offerUserId          String
+  negotiableType       String
+  postingType          PostingType
+  negotiationWindow    Int?             // Negotiation window in hours
+  deadline             DateTime?
+  offerStatus          OfferStatus       @default(PENDING)
+  offerMessage         String?           @db.Text
+  parentOfferId        String?
+  offerExpiryDate      DateTime?
+  minimumQuantity      String?
+  maximumQuantity      String?
+  deliveryTerms        String?           @db.Text
+  paymentTerms         String?           @db.Text
+  validityPeriod       Int?              // Offer validity period in days
+  isCounterOffer       Boolean           @default(false)
+  offerPriority        OfferPriority      @default(MEDIUM)
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  deletedAt            DateTime?
+
+  // Relations
+  requirement          Requirement       @relation("RequirementOffers", fields: [requirementId], references: [id], onDelete: Cascade)
+  requirementOwner     User              @relation("RequirementOwnerOffers", fields: [requirementOwnerId], references: [id], onDelete: Cascade)
+  offerUser            User              @relation("UserOffers", fields: [offerUserId], references: [id], onDelete: Cascade)
+  parentOffer           Offer?            @relation("CounterOffers", fields: [parentOfferId], references: [id], onDelete: SetNull)
+  counterOffers         Offer[]           @relation("CounterOffers")
+  offerHistory          OfferHistory[]
+  offerNotifications    OfferNotification[]
+
+  @@map("offers")
+}
+
+model OfferHistory {
+  id          String         @id @default(cuid())
+  offerId     String
+  action      OfferAction
+  performedBy String
+  performedAt DateTime       @default(now())
+  notes       String?        @db.Text
+  oldValues   Json?
+  newValues   Json?
+
+  // Relations
+  offer       Offer          @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  performer   User           @relation("UserOfferHistory", fields: [performedBy], references: [id], onDelete: Cascade)
+
+  @@map("offer_history")
+}
+
+model OfferNotification {
+  id               String             @id @default(cuid())
+  offerId          String
+  recipientId      String
+  notificationType OfferNotificationType
+  isRead           Boolean            @default(false)
+  createdAt        DateTime           @default(now())
+
+  // Relations
+  offer            Offer              @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  recipient        User               @relation("UserOfferNotifications", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@map("offer_notifications")
+}
+
+enum OfferStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  EXPIRED
+  WITHDRAWN
+  COUNTERED
+}
+
+enum OfferAction {
+  CREATED
+  UPDATED
+  ACCEPTED
+  REJECTED
+  EXPIRED
+  WITHDRAWN
+  COUNTERED
+}
+
+enum OfferNotificationType {
+  NEW_OFFER
+  OFFER_ACCEPTED
+  OFFER_REJECTED
+  OFFER_EXPIRED
+  COUNTER_OFFER
+}
+
+enum OfferPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
 }
 
 enum UnitType {
