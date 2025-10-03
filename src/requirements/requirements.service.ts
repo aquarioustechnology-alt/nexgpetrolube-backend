@@ -530,7 +530,8 @@ export class RequirementsService {
       subcategory: requirement.subcategory,
       product: requirement.product,
       brand: requirement.brand,
-      user: requirement.user
+      user: requirement.user,
+      offers: requirement.offers
     };
   }
 
@@ -629,6 +630,25 @@ export class RequirementsService {
               companyName: true,
               email: true,
               role: true
+            }
+          },
+          offers: {
+            where: {
+              deletedAt: null
+            },
+            include: {
+              offerUser: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  companyName: true,
+                  email: true
+                }
+              }
+            },
+            orderBy: {
+              createdAt: 'desc'
             }
           }
         }

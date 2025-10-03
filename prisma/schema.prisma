@@ -36,6 +36,8 @@ model User {
   requirementOwnerOffers Offer[]    @relation("RequirementOwnerOffers")
   offerHistory    OfferHistory[]    @relation("UserOfferHistory")
   offerNotifications OfferNotification[] @relation("UserOfferNotifications")
+  payments        Payment[]
+  logistics       Logistics[]
 
   @@map("users")
 }
@@ -607,6 +609,13 @@ model Offer {
   validityPeriod       Int?              // Offer validity period in days
   isCounterOffer       Boolean           @default(false)
   offerPriority        OfferPriority      @default(MEDIUM)
+  // Payment success fields
+  sellerPaymentStatus  PaymentStatus     @default(PENDING)
+  buyerPaymentStatus   PaymentStatus     @default(PENDING)
+  sellerPaymentId      String?
+  buyerPaymentId       String?
+  sellerPaidAt         DateTime?
+  buyerPaidAt          DateTime?
   createdAt            DateTime          @default(now())
   updatedAt            DateTime          @updatedAt
   deletedAt            DateTime?
@@ -619,6 +628,9 @@ model Offer {
   counterOffers         Offer[]           @relation("CounterOffers")
   offerHistory          OfferHistory[]
   offerNotifications    OfferNotification[]
+  sellerPayment        Payment?          @relation("OfferSellerPayment", fields: [sellerPaymentId], references: [id], onDelete: SetNull)
+  buyerPayment         Payment?          @relation("OfferBuyerPayment", fields: [buyerPaymentId], references: [id], onDelete: SetNull)
+  logistics            Logistics[]
 
   @@map("offers")
 }
@@ -720,4 +732,92 @@ enum AdminRole {
   FINANCE
   CMS_EDITOR
   SUPPORT
+}
+
+model Payment {
+  id                String        @id @default(cuid())
+  offerId           String?       // Optional - can be used for other payment types
+  userId            String        // User making the payment
+  paymentType       PaymentType
+  amount            Decimal       @db.Decimal(10, 2)
+  currency          String        @default("INR")
+  paymentMethod     PaymentMethod
+  paymentStatus     PaymentStatus @default(PENDING)
+  transactionId     String?       // External payment gateway transaction ID
+  gatewayResponse   Json?         // Store gateway response data
+  utrNumber         String?       // UTR number for bank transfers
+  paymentScreenshot String?       // Screenshot of payment proof
+  notes             String?       @db.Text
+  processedAt       DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sellerOffers      Offer[]       @relation("OfferSellerPayment")
+  buyerOffers       Offer[]       @relation("OfferBuyerPayment")
+
+  @@map("payments")
+}
+
+model Logistics {
+  id                String           @id @default(cuid())
+  offerId           String           // Required - logistics is always tied to an offer
+  userId            String           // User who created the logistics entry
+  driverName        String?
+  driverPhone       String?
+  truckNumber       String?
+  truckType         String?
+  logisticsCompany  String?
+  companyPhone      String?
+  companyEmail      String?
+  pickupAddress     String?          @db.Text
+  deliveryAddress   String?          @db.Text
+  estimatedPickupDate   DateTime?
+  estimatedDeliveryDate DateTime?
+  actualPickupDate     DateTime?
+  actualDeliveryDate   DateTime?
+  status            LogisticsStatus   @default(PENDING)
+  notes             String?          @db.Text
+  trackingNumber    String?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  // Relations
+  offer             Offer            @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("logistics")
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentType {
+  COMMISSION
+  COMPLETE_PAYMENT
+  REFUND
+  ADVANCE_PAYMENT
+}
+
+enum PaymentMethod {
+  UPI
+  CARD
+  NET_BANKING
+  WALLET
+  BANK_TRANSFER
+}
+
+enum LogisticsStatus {
+  PENDING
+  SCHEDULED
+  IN_TRANSIT
+  DELIVERED
+  CANCELLED
 }

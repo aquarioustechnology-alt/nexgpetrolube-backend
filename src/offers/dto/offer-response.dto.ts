@@ -1,4 +1,4 @@
-import { OfferStatus, OfferPriority } from '@prisma/client';
+import { OfferStatus, OfferPriority, PaymentStatus } from '@prisma/client';
 
 export class OfferResponseDto {
   id: string;
@@ -26,12 +26,21 @@ export class OfferResponseDto {
   createdAt: Date;
   updatedAt: Date;
   deletedAt?: Date;
+  
+  // Payment status fields
+  sellerPaymentStatus?: PaymentStatus;
+  buyerPaymentStatus?: PaymentStatus;
+  sellerPaymentId?: string;
+  buyerPaymentId?: string;
+  sellerPaidAt?: Date;
+  buyerPaidAt?: Date;
 
   // Relations
   requirement?: {
     id: string;
     title: string;
     description: string;
+    shortDescription?: string;
     productName?: string;
     quantity?: string;
     units?: string;
@@ -72,6 +81,17 @@ export class OfferResponseDto {
 
   parentOffer?: OfferResponseDto;
   counterOffers?: OfferResponseDto[];
+  
+  // Logistics information
+  logistics?: {
+    id: string;
+    driverPhone?: string;
+    truckNumber?: string;
+    logisticsCompany?: string;
+    estimatedDeliveryDate?: Date;
+    status: string;
+    createdAt: Date;
+  }[];
 }
 
 export class OfferHistoryResponseDto {

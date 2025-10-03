@@ -16,6 +16,8 @@ import { AdminModule } from './admin/admin.module';
 import { UploadModule } from './upload/upload.module';
 import { WebsocketModule } from './websocket/websocket.module';
 import { OffersModule } from './offers/offers.module';
+import { PaymentsModule } from './payments/payments.module';
+import { LogisticsModule } from './logistics/logistics.module';
 import { CommonModule } from './common/common.module';
 import { AppConfigModule } from './config/app.config';
 
@@ -53,6 +55,8 @@ import { AppConfigModule } from './config/app.config';
     CategoriesModule,
     NotificationsModule,
     OffersModule,
+    PaymentsModule,
+    LogisticsModule,
     AdminModule,
     UploadModule,
     WebsocketModule,

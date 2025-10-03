@@ -34,6 +34,30 @@ export class OffersController {
     return this.offersService.updateOfferStatus(id, req.user.sub, updateDto);
   }
 
+  @Put(':id/accept')
+  async acceptOffer(
+    @Param('id') id: string,
+    @Request() req,
+    @Body() body?: { notes?: string },
+  ) {
+    return this.offersService.updateOfferStatus(id, req.user.sub, {
+      action: 'ACCEPTED' as any,
+      notes: body?.notes,
+    });
+  }
+
+  @Put(':id/reject')
+  async rejectOffer(
+    @Param('id') id: string,
+    @Request() req,
+    @Body() body?: { notes?: string },
+  ) {
+    return this.offersService.updateOfferStatus(id, req.user.sub, {
+      action: 'REJECTED' as any,
+      notes: body?.notes,
+    });
+  }
+
   @Post(':id/counter')
   async createCounterOffer(
     @Param('id') id: string,

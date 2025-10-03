@@ -226,6 +226,17 @@ export class OffersService {
               phone: true,
             },
           },
+          logistics: {
+            select: {
+              id: true,
+              driverPhone: true,
+              truckNumber: true,
+              logisticsCompany: true,
+              estimatedDeliveryDate: true,
+              status: true,
+              createdAt: true,
+            },
+          },
           parentOffer: true,
           counterOffers: true,
         },
@@ -282,6 +293,17 @@ export class OffersService {
             phone: true,
           },
         },
+        logistics: {
+          select: {
+            id: true,
+            driverPhone: true,
+            truckNumber: true,
+            logisticsCompany: true,
+            estimatedDeliveryDate: true,
+            status: true,
+            createdAt: true,
+          },
+        },
         parentOffer: true,
         counterOffers: true,
       },
@@ -312,6 +334,21 @@ export class OffersService {
 
     // Validate status transitions
     this.validateStatusTransition(offer.offerStatus, updateDto.action);
+
+    // If accepting an offer, reduce available quantity
+    if (updateDto.action === OfferAction.ACCEPTED) {
+      const currentAvailableQuantity = parseFloat(offer.requirement.availableQuantity || '0');
+      const offeredQuantity = parseFloat(offer.offeredQuantity);
+      const newAvailableQuantity = Math.max(0, currentAvailableQuantity - offeredQuantity);
+      
+      // Update requirement's available quantity
+      await this.prisma.requirement.update({
+        where: { id: offer.requirementId },
+        data: {
+          availableQuantity: newAvailableQuantity.toString(),
+        },
+      });
+    }
 
     const updatedOffer = await this.prisma.offer.update({
       where: { id },
@@ -719,11 +756,19 @@ export class OffersService {
       createdAt: offer.createdAt,
       updatedAt: offer.updatedAt,
       deletedAt: offer.deletedAt,
+      // Payment status fields
+      sellerPaymentStatus: offer.sellerPaymentStatus,
+      buyerPaymentStatus: offer.buyerPaymentStatus,
+      sellerPaymentId: offer.sellerPaymentId,
+      buyerPaymentId: offer.buyerPaymentId,
+      sellerPaidAt: offer.sellerPaidAt,
+      buyerPaidAt: offer.buyerPaidAt,
       requirement: offer.requirement,
       requirementOwner: offer.requirementOwner,
       offerUser: offer.offerUser,
       parentOffer: offer.parentOffer,
       counterOffers: offer.counterOffers,
+      logistics: offer.logistics,
     };
   }
 }

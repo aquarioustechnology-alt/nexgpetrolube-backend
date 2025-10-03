@@ -150,4 +150,7 @@ export class RequirementResponseDto {
 
   @ApiProperty({ required: false })
   user?: any;
+
+  @ApiProperty({ required: false, type: [Object] })
+  offers?: any[];
 }
