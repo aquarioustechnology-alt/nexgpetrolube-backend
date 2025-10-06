@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Put, Body, Param, Request, UseGuards } from '@nestjs/common';
+import { Controller, Post, Get, Put, Body, Param, Request, UseGuards, NotFoundException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { LogisticsService } from './logistics.service';
@@ -27,7 +27,11 @@ export class LogisticsController {
   @ApiResponse({ status: 200, description: 'Logistics details retrieved successfully', type: LogisticsResponseDto })
   @ApiResponse({ status: 404, description: 'Logistics not found' })
   async getLogisticsByOfferId(@Param('offerId') offerId: string) {
-    return this.logisticsService.getLogisticsByOfferId(offerId);
+    const logistics = await this.logisticsService.getLogisticsByOfferId(offerId);
+    if (!logistics) {
+      throw new NotFoundException('Logistics not found for this offer');
+    }
+    return logistics;
   }
 
   @Put(':id/status')

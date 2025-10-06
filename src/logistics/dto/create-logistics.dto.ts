@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsDateString, IsNotEmpty, Matches } from 'class-validator';
+import { IsString, IsDateString, IsNotEmpty, Matches, IsOptional, IsBoolean } from 'class-validator';
 
 export class CreateLogisticsDto {
   @ApiProperty({ description: 'Offer ID' })
@@ -27,4 +27,30 @@ export class CreateLogisticsDto {
   @IsDateString()
   @IsNotEmpty()
   estimatedDeliveryDate: string;
+
+  // New optional fields
+  @ApiProperty({ description: 'Invoice Copy File Path', required: false })
+  @IsString()
+  @IsOptional()
+  invoiceCopy?: string;
+
+  @ApiProperty({ description: 'Bilty Copy File Path', required: false })
+  @IsString()
+  @IsOptional()
+  biltyCopy?: string;
+
+  @ApiProperty({ description: 'Insurance Coverage', required: false })
+  @IsBoolean()
+  @IsOptional()
+  insurance?: boolean;
+
+  @ApiProperty({ description: 'Notes', required: false })
+  @IsString()
+  @IsOptional()
+  notes?: string;
+
+  @ApiProperty({ description: 'Tracking ID', required: false })
+  @IsString()
+  @IsOptional()
+  trackingId?: string;
 }

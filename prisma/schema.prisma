@@ -780,6 +780,11 @@ model Logistics {
   status            LogisticsStatus   @default(PENDING)
   notes             String?          @db.Text
   trackingNumber    String?
+  // New fields
+  invoiceCopy       String?          // File path for invoice copy
+  biltyCopy         String?          // File path for bilty copy
+  insurance         Boolean?         // Insurance yes/no
+  trackingId        String?          // Any tracking ID
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
 

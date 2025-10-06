@@ -59,6 +59,19 @@ export class LogisticsResponseDto {
   @ApiProperty({ description: 'Tracking number', required: false })
   trackingNumber?: string;
 
+  // New fields
+  @ApiProperty({ description: 'Invoice copy file path', required: false })
+  invoiceCopy?: string;
+
+  @ApiProperty({ description: 'Bilty copy file path', required: false })
+  biltyCopy?: string;
+
+  @ApiProperty({ description: 'Insurance coverage', required: false })
+  insurance?: boolean;
+
+  @ApiProperty({ description: 'Tracking ID', required: false })
+  trackingId?: string;
+
   @ApiProperty({ description: 'Creation date' })
   createdAt: Date;
 

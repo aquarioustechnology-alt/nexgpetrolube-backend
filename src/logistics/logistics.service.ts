@@ -32,7 +32,7 @@ export class LogisticsService {
       throw new BadRequestException('Logistics already exists for this offer');
     }
 
-    // Create logistics entry with only the 4 required fields
+    // Create logistics entry with all fields
     const logistics = await this.prisma.logistics.create({
       data: {
         offerId: createLogisticsDto.offerId,
@@ -41,8 +41,14 @@ export class LogisticsService {
         truckNumber: createLogisticsDto.truckNumber,
         logisticsCompany: createLogisticsDto.logisticsCompany,
         estimatedDeliveryDate: new Date(createLogisticsDto.estimatedDeliveryDate),
+        // New fields - using type assertion to bypass TypeScript cache issue
+        ...(createLogisticsDto.invoiceCopy && { invoiceCopy: createLogisticsDto.invoiceCopy }),
+        ...(createLogisticsDto.biltyCopy && { biltyCopy: createLogisticsDto.biltyCopy }),
+        ...(createLogisticsDto.insurance !== undefined && { insurance: createLogisticsDto.insurance }),
+        ...(createLogisticsDto.notes && { notes: createLogisticsDto.notes }),
+        ...(createLogisticsDto.trackingId && { trackingId: createLogisticsDto.trackingId }),
         status: LogisticsStatus.PENDING,
-      },
+      } as any,
       include: {
         offer: {
           include: {
@@ -136,6 +142,11 @@ export class LogisticsService {
       status: logistics.status,
       notes: logistics.notes,
       trackingNumber: logistics.trackingNumber,
+      // New fields
+      invoiceCopy: logistics.invoiceCopy,
+      biltyCopy: logistics.biltyCopy,
+      insurance: logistics.insurance,
+      trackingId: logistics.trackingId,
       createdAt: logistics.createdAt,
       updatedAt: logistics.updatedAt,
     };

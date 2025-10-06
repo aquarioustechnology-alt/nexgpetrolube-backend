@@ -10,6 +10,7 @@ import { AdminBrandsModule } from './brands/brands.module';
 import { AdminProductsModule } from './products/products.module';
 import { AdminCountsModule } from './counts/counts.module';
 import { AdminRequirementsModule } from './requirements/requirements.module';
+import { AdminRequirementOffersModule } from './requirement-offers/requirement-offers.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { AdminRequirementsModule } from './requirements/requirements.module';
     AdminProductsModule,
     AdminCountsModule,
     AdminRequirementsModule,
+    AdminRequirementOffersModule,
   ],
 })
 export class AdminModule {}
