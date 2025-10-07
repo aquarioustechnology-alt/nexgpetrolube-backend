@@ -2,7 +2,7 @@ import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, Requ
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { OffersService } from './offers.service';
 import { CreateOfferDto } from './dto/create-offer.dto';
-import { UpdateOfferStatusDto, CounterOfferDto } from './dto/update-offer.dto';
+import { UpdateOfferStatusDto, CounterOfferDto, UpdateOfferDetailsDto } from './dto/update-offer.dto';
 import { GetOffersQueryDto, GetOfferHistoryQueryDto, GetOfferNotificationsQueryDto } from './dto/get-offers.dto';
 
 @Controller('offers')
@@ -23,6 +23,15 @@ export class OffersController {
   @Get(':id')
   async getOfferById(@Param('id') id: string) {
     return this.offersService.getOfferById(id);
+  }
+
+  @Put(':id')
+  async updateOfferDetails(
+    @Param('id') id: string,
+    @Request() req,
+    @Body() updateDto: UpdateOfferDetailsDto,
+  ) {
+    return this.offersService.updateOfferDetails(id, req.user.sub, updateDto);
   }
 
   @Put(':id/status')

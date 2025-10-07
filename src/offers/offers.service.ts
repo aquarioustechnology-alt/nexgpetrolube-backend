@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 import { CreateOfferDto } from './dto/create-offer.dto';
-import { UpdateOfferStatusDto, CounterOfferDto } from './dto/update-offer.dto';
+import { UpdateOfferStatusDto, CounterOfferDto, UpdateOfferDetailsDto } from './dto/update-offer.dto';
 import { OfferResponseDto, OfferHistoryResponseDto, OfferNotificationResponseDto } from './dto/offer-response.dto';
 import { GetOffersQueryDto, GetOfferHistoryQueryDto, GetOfferNotificationsQueryDto } from './dto/get-offers.dto';
 import { OfferStatus, OfferPriority, OfferAction, OfferNotificationType } from '@prisma/client';
@@ -68,6 +68,16 @@ export class OffersService {
 
     if (existingOffer) {
       throw new BadRequestException('You have already placed an offer on this requirement');
+    }
+
+    // Validate offered quantity against available quantity
+    const offeredQuantity = parseFloat(createOfferDto.offeredQuantity);
+    const availableQuantity = parseFloat(requirement.availableQuantity || '0');
+    
+    if (offeredQuantity > availableQuantity) {
+      throw new BadRequestException(
+        `Cannot create offer. Offered quantity (${offeredQuantity}) exceeds available quantity (${availableQuantity})`
+      );
     }
 
     // Create the offer
@@ -316,6 +326,101 @@ export class OffersService {
     return this.mapToOfferResponse(offer);
   }
 
+  async updateOfferDetails(id: string, userId: string, updateDto: UpdateOfferDetailsDto): Promise<OfferResponseDto> {
+    const offer = await this.prisma.offer.findUnique({
+      where: { id, deletedAt: null },
+      include: { requirement: true },
+    });
+
+    if (!offer) {
+      throw new NotFoundException('Offer not found');
+    }
+
+    // Check permissions - only the offer creator can update offer details
+    if (offer.offerUserId !== userId) {
+      throw new ForbiddenException('Not authorized to update this offer');
+    }
+
+    // Only allow updating pending offers
+    if (offer.offerStatus !== OfferStatus.PENDING) {
+      throw new BadRequestException('Only pending offers can be updated');
+    }
+
+    // Validate quantity if provided
+    if (updateDto.offeredQuantity) {
+      const offeredQuantity = parseFloat(updateDto.offeredQuantity);
+      const availableQuantity = parseFloat(offer.requirement.availableQuantity || '0');
+      
+      if (isNaN(offeredQuantity) || offeredQuantity <= 0) {
+        throw new BadRequestException('Invalid quantity provided');
+      }
+      
+      if (offeredQuantity > availableQuantity) {
+        throw new BadRequestException(`Quantity cannot exceed available quantity (${availableQuantity})`);
+      }
+    }
+
+    const updatedOffer = await this.prisma.offer.update({
+      where: { id },
+      data: {
+        ...(updateDto.offeredQuantity && { offeredQuantity: updateDto.offeredQuantity }),
+        ...(updateDto.offerMessage !== undefined && { offerMessage: updateDto.offerMessage }),
+        updatedAt: new Date(),
+      },
+      include: {
+        requirement: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                companyName: true,
+                email: true,
+                phone: true,
+              },
+            },
+          },
+        },
+        requirementOwner: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            companyName: true,
+            email: true,
+            phone: true,
+          },
+        },
+        offerUser: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            companyName: true,
+            email: true,
+            phone: true,
+          },
+        },
+        parentOffer: true,
+        counterOffers: true,
+        logistics: {
+          select: {
+            id: true,
+            driverPhone: true,
+            truckNumber: true,
+            logisticsCompany: true,
+            estimatedDeliveryDate: true,
+            status: true,
+            createdAt: true,
+          }
+        }
+      },
+    });
+
+    return this.mapToOfferResponse(updatedOffer);
+  }
+
   async updateOfferStatus(id: string, userId: string, updateDto: UpdateOfferStatusDto): Promise<OfferResponseDto> {
     const offer = await this.prisma.offer.findUnique({
       where: { id, deletedAt: null },
@@ -335,10 +440,18 @@ export class OffersService {
     // Validate status transitions
     this.validateStatusTransition(offer.offerStatus, updateDto.action);
 
-    // If accepting an offer, reduce available quantity
+    // If accepting an offer, validate and reduce available quantity
     if (updateDto.action === OfferAction.ACCEPTED) {
       const currentAvailableQuantity = parseFloat(offer.requirement.availableQuantity || '0');
       const offeredQuantity = parseFloat(offer.offeredQuantity);
+      
+      // Validate that there's enough available quantity
+      if (offeredQuantity > currentAvailableQuantity) {
+        throw new BadRequestException(
+          `Cannot accept offer. Offered quantity (${offeredQuantity}) exceeds available quantity (${currentAvailableQuantity})`
+        );
+      }
+      
       const newAvailableQuantity = Math.max(0, currentAvailableQuantity - offeredQuantity);
       
       // Update requirement's available quantity

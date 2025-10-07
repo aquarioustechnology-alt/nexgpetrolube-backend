@@ -11,6 +11,16 @@ export class UpdateOfferStatusDto {
   notes?: string;
 }
 
+export class UpdateOfferDetailsDto {
+  @IsOptional()
+  @IsString()
+  offeredQuantity?: string;
+
+  @IsOptional()
+  @IsString()
+  offerMessage?: string;
+}
+
 export class CounterOfferDto {
   @IsString()
   offeredQuantity: string;
