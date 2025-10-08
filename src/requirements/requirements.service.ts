@@ -706,6 +706,27 @@ export class RequirementsService {
             phone: true,
             role: true
           }
+        },
+        offers: {
+          where: {
+            deletedAt: null
+          },
+          include: {
+            offerUser: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                companyName: true,
+                email: true,
+                phone: true,
+                role: true
+              }
+            }
+          },
+          orderBy: {
+            createdAt: 'desc'
+          }
         }
       }
     });

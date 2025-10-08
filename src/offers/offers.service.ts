@@ -249,6 +249,20 @@ export class OffersService {
           },
           parentOffer: true,
           counterOffers: true,
+          // counterOffersList: {
+          //   include: {
+          //     fromUser: {
+          //       select: {
+          //         id: true,
+          //         firstName: true,
+          //         lastName: true,
+          //         companyName: true,
+          //         email: true,
+          //       },
+          //     },
+          //   },
+          //   orderBy: { createdAt: 'desc' },
+          // },
         },
         orderBy: { [sortBy]: sortOrder },
         skip: (pageNum - 1) * limitNum,
@@ -316,6 +330,20 @@ export class OffersService {
         },
         parentOffer: true,
         counterOffers: true,
+        // counterOffersList: {
+        //   include: {
+        //     fromUser: {
+        //       select: {
+        //         id: true,
+        //         firstName: true,
+        //         lastName: true,
+        //         companyName: true,
+        //         email: true,
+        //       },
+        //     },
+        //   },
+        //   orderBy: { createdAt: 'desc' },
+        // },
       },
     });
 
@@ -866,6 +894,10 @@ export class OffersService {
       validityPeriod: offer.validityPeriod,
       isCounterOffer: offer.isCounterOffer,
       offerPriority: offer.offerPriority,
+      // Counteroffer fields
+      counterofferCount: offer.counterofferCount || 0,
+      originalPrice: offer.originalPrice ? Number(offer.originalPrice) : undefined,
+      originalQuantity: offer.originalQuantity,
       createdAt: offer.createdAt,
       updatedAt: offer.updatedAt,
       deletedAt: offer.deletedAt,
@@ -881,6 +913,17 @@ export class OffersService {
       offerUser: offer.offerUser,
       parentOffer: offer.parentOffer,
       counterOffers: offer.counterOffers,
+      // counterOffersList: offer.counterOffersList?.map((co: any) => ({
+      //   id: co.id,
+      //   counterofferNumber: co.counterofferNumber,
+      //   offeredPrice: Number(co.offeredPrice),
+      //   offeredQuantity: co.offeredQuantity,
+      //   status: co.status,
+      //   expiresAt: co.expiresAt,
+      //   createdAt: co.createdAt,
+      //   fromUser: co.fromUser,
+      // })),
+      counterOffersList: [],
       logistics: offer.logistics,
     };
   }

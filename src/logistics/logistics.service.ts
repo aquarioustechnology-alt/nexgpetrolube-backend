@@ -23,14 +23,7 @@ export class LogisticsService {
       throw new NotFoundException('Offer not found');
     }
 
-    // Check if logistics already exists for this offer
-    const existingLogistics = await this.prisma.logistics.findFirst({
-      where: { offerId: createLogisticsDto.offerId },
-    });
-
-    if (existingLogistics) {
-      throw new BadRequestException('Logistics already exists for this offer');
-    }
+    // Allow multiple logistics entries per offer (multiple vehicles)
 
     // Create logistics entry with all fields
     const logistics = await this.prisma.logistics.create({
@@ -64,8 +57,8 @@ export class LogisticsService {
     return this.mapToLogisticsResponse(logistics);
   }
 
-  async getLogisticsByOfferId(offerId: string): Promise<LogisticsResponseDto | null> {
-    const logistics = await this.prisma.logistics.findFirst({
+  async getLogisticsByOfferId(offerId: string): Promise<LogisticsResponseDto[]> {
+    const logistics = await this.prisma.logistics.findMany({
       where: { offerId },
       include: {
         offer: {
@@ -77,13 +70,10 @@ export class LogisticsService {
         },
         user: true,
       },
+      orderBy: { createdAt: 'asc' },
     });
 
-    if (!logistics) {
-      return null;
-    }
-
-    return this.mapToLogisticsResponse(logistics);
+    return logistics.map(logistics => this.mapToLogisticsResponse(logistics));
   }
 
   async updateLogisticsStatus(logisticsId: string, status: LogisticsStatus): Promise<LogisticsResponseDto> {

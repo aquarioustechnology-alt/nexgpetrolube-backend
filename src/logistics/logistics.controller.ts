@@ -23,15 +23,10 @@ export class LogisticsController {
   }
 
   @Get('offer/:offerId')
-  @ApiOperation({ summary: 'Get logistics details by offer ID' })
-  @ApiResponse({ status: 200, description: 'Logistics details retrieved successfully', type: LogisticsResponseDto })
-  @ApiResponse({ status: 404, description: 'Logistics not found' })
+  @ApiOperation({ summary: 'Get all logistics entries for an offer' })
+  @ApiResponse({ status: 200, description: 'Logistics entries retrieved successfully', type: [LogisticsResponseDto] })
   async getLogisticsByOfferId(@Param('offerId') offerId: string) {
-    const logistics = await this.logisticsService.getLogisticsByOfferId(offerId);
-    if (!logistics) {
-      throw new NotFoundException('Logistics not found for this offer');
-    }
-    return logistics;
+    return this.logisticsService.getLogisticsByOfferId(offerId);
   }
 
   @Put(':id/status')

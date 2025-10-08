@@ -36,6 +36,7 @@ model User {
   requirementOwnerOffers Offer[]    @relation("RequirementOwnerOffers")
   offerHistory    OfferHistory[]    @relation("UserOfferHistory")
   offerNotifications OfferNotification[] @relation("UserOfferNotifications")
+  counterOffers   CounterOffer[]    @relation("UserCounterOffers")
   payments        Payment[]
   logistics       Logistics[]
 
@@ -292,6 +293,7 @@ model Requirement {
   auctions         Auction[]
   quotes           Quote[]
   offers           Offer[]            @relation("RequirementOffers")
+  counterOffers    CounterOffer[]     @relation("RequirementCounterOffers")
   category         Category           @relation("RequirementCategory", fields: [categoryId], references: [id])
   subcategory      Category?          @relation("RequirementSubcategory", fields: [subcategoryId], references: [id])
   product          Product?           @relation(fields: [productId], references: [id])
@@ -609,6 +611,10 @@ model Offer {
   validityPeriod       Int?              // Offer validity period in days
   isCounterOffer       Boolean           @default(false)
   offerPriority        OfferPriority      @default(MEDIUM)
+  // Counteroffer fields
+  counterofferCount    Int               @default(0)
+  originalPrice        Decimal?           @db.Decimal(10, 2)
+  originalQuantity     String?
   // Payment success fields
   sellerPaymentStatus  PaymentStatus     @default(PENDING)
   buyerPaymentStatus   PaymentStatus     @default(PENDING)
@@ -626,6 +632,7 @@ model Offer {
   offerUser            User              @relation("UserOffers", fields: [offerUserId], references: [id], onDelete: Cascade)
   parentOffer           Offer?            @relation("CounterOffers", fields: [parentOfferId], references: [id], onDelete: SetNull)
   counterOffers         Offer[]           @relation("CounterOffers")
+  counterOffersList     CounterOffer[]    @relation("OfferCounterOffers")
   offerHistory          OfferHistory[]
   offerNotifications    OfferNotification[]
   sellerPayment        Payment?          @relation("OfferSellerPayment", fields: [sellerPaymentId], references: [id], onDelete: SetNull)
@@ -633,6 +640,35 @@ model Offer {
   logistics            Logistics[]
 
   @@map("offers")
+}
+
+model CounterOffer {
+  id                   String           @id @default(cuid())
+  offerId              String
+  fromId               String
+  requirementId        String
+  counterofferNumber   Int              // 1, 2, 3, 4, 5 (max 5)
+  offeredPrice         Decimal          @db.Decimal(10, 2)
+  offeredQuantity      String
+  status               CounterOfferStatus @default(PENDING)
+  negotiationWindowHours Int            // Hours from requirement
+  expiresAt            DateTime
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  // Relations
+  offer                Offer            @relation("OfferCounterOffers", fields: [offerId], references: [id], onDelete: Cascade)
+  fromUser             User             @relation("UserCounterOffers", fields: [fromId], references: [id], onDelete: Cascade)
+  requirement          Requirement      @relation("RequirementCounterOffers", fields: [requirementId], references: [id], onDelete: Cascade)
+
+  @@map("counter_offers")
+}
+
+enum CounterOfferStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  EXPIRED
 }
 
 model OfferHistory {

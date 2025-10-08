@@ -8,13 +8,17 @@ import {
   Delete,
   Query,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
 import { AdminProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { ProductListingDto } from './dto/product-listing.dto';
 import { ProductResponseDto } from './dto/product-response.dto';
+import { CsvUploadResponseDto, CsvProductDto } from './dto/csv-upload.dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 
@@ -79,5 +83,19 @@ export class AdminProductsController {
   @ApiResponse({ status: 404, description: 'Product not found' })
   remove(@Param('id') id: string) {
     return this.productsService.remove(id);
+  }
+
+  @Post('upload-csv')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiOperation({ summary: 'Upload products from CSV file' })
+  @ApiConsumes('multipart/form-data')
+  @ApiResponse({
+    status: 201,
+    description: 'CSV uploaded and processed successfully',
+    type: CsvUploadResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'Invalid CSV format or data' })
+  async uploadCsv(@UploadedFile() file: Express.Multer.File) {
+    return this.productsService.uploadCsv(file);
   }
 }

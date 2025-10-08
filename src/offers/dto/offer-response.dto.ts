@@ -23,6 +23,10 @@ export class OfferResponseDto {
   validityPeriod?: number;
   isCounterOffer: boolean;
   offerPriority: OfferPriority;
+  // Counteroffer fields
+  counterofferCount: number;
+  originalPrice?: number;
+  originalQuantity?: string;
   createdAt: Date;
   updatedAt: Date;
   deletedAt?: Date;
@@ -81,6 +85,22 @@ export class OfferResponseDto {
 
   parentOffer?: OfferResponseDto;
   counterOffers?: OfferResponseDto[];
+  counterOffersList?: {
+    id: string;
+    counterofferNumber: number;
+    offeredPrice: number;
+    offeredQuantity: string;
+    status: string;
+    expiresAt: Date;
+    createdAt: Date;
+    fromUser: {
+      id: string;
+      firstName?: string;
+      lastName?: string;
+      companyName: string;
+      email: string;
+    };
+  }[];
   
   // Logistics information
   logistics?: {

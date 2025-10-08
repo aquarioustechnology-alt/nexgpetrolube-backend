@@ -454,6 +454,10 @@ export class AdminRequirementOffersService {
       validityPeriod: offer.validityPeriod,
       isCounterOffer: offer.isCounterOffer,
       offerPriority: offer.offerPriority,
+      // Counteroffer fields
+      counterofferCount: offer.counterofferCount || 0,
+      originalPrice: offer.originalPrice ? Number(offer.originalPrice) : undefined,
+      originalQuantity: offer.originalQuantity,
       createdAt: offer.createdAt,
       updatedAt: offer.updatedAt,
       deletedAt: offer.deletedAt,

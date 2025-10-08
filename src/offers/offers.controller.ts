@@ -1,14 +1,24 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { OffersService } from './offers.service';
+import { CounterOffersService } from './counter-offers.service';
 import { CreateOfferDto } from './dto/create-offer.dto';
 import { UpdateOfferStatusDto, CounterOfferDto, UpdateOfferDetailsDto } from './dto/update-offer.dto';
 import { GetOffersQueryDto, GetOfferHistoryQueryDto, GetOfferNotificationsQueryDto } from './dto/get-offers.dto';
+import { 
+  CreateCounterOfferDto, 
+  UpdateCounterOfferDto, 
+  AcceptCounterOfferDto,
+  RejectCounterOfferDto 
+} from './dto/counter-offer.dto';
 
 @Controller('offers')
 @UseGuards(JwtAuthGuard)
 export class OffersController {
-  constructor(private readonly offersService: OffersService) {}
+  constructor(
+    private readonly offersService: OffersService,
+    private readonly counterOffersService: CounterOffersService
+  ) {}
 
   @Post()
   async createOffer(@Request() req, @Body() createOfferDto: CreateOfferDto) {
@@ -67,14 +77,6 @@ export class OffersController {
     });
   }
 
-  @Post(':id/counter')
-  async createCounterOffer(
-    @Param('id') id: string,
-    @Request() req,
-    @Body() counterOfferDto: CounterOfferDto,
-  ) {
-    return this.offersService.createCounterOffer(id, req.user.sub, counterOfferDto);
-  }
 
   @Get('history/list')
   async getOfferHistory(@Query() query: GetOfferHistoryQueryDto) {
@@ -121,5 +123,56 @@ export class OffersController {
   @Get('user/notifications')
   async getMyNotifications(@Request() req, @Query() query: Omit<GetOfferNotificationsQueryDto, 'recipientId'>) {
     return this.offersService.getOfferNotifications({ ...query, recipientId: req.user.sub });
+  }
+
+  // Counteroffer endpoints
+  @Post('counter-offers')
+  async createCounterOffer(@Request() req, @Body() createCounterOfferDto: CreateCounterOfferDto) {
+    console.log('createCounterOffer - req.user:', req.user);
+    console.log('createCounterOffer - req.user.sub:', req.user?.sub);
+    
+    if (!req.user || !req.user.sub) {
+      throw new Error('User not authenticated');
+    }
+    
+    return this.counterOffersService.createCounterOffer(createCounterOfferDto, req.user.sub);
+  }
+
+  @Get('counter-offers/offer/:offerId')
+  async getCounterOffersByOffer(@Param('offerId') offerId: string) {
+    return this.counterOffersService.getCounterOffersByOffer(offerId);
+  }
+
+  @Get('counter-offers/requirement/:requirementId')
+  async getCounterOffersByRequirement(
+    @Param('requirementId') requirementId: string,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number
+  ) {
+    return this.counterOffersService.getCounterOffersByRequirement(requirementId, page || 1, limit || 10);
+  }
+
+  @Put('counter-offers/:id')
+  async updateCounterOffer(
+    @Param('id') counterOfferId: string,
+    @Body() updateCounterOfferDto: UpdateCounterOfferDto,
+    @Request() req
+  ) {
+    return this.counterOffersService.updateCounterOffer(counterOfferId, updateCounterOfferDto, req.user.sub);
+  }
+
+  @Post('counter-offers/accept')
+  async acceptCounterOffer(@Request() req, @Body() acceptCounterOfferDto: AcceptCounterOfferDto) {
+    return this.counterOffersService.acceptCounterOffer(acceptCounterOfferDto, req.user.sub);
+  }
+
+  @Post('counter-offers/reject')
+  async rejectCounterOffer(@Request() req, @Body() rejectCounterOfferDto: RejectCounterOfferDto) {
+    return this.counterOffersService.rejectCounterOffer(rejectCounterOfferDto, req.user.sub);
+  }
+
+  @Delete('counter-offers/:id')
+  async deleteCounterOffer(@Param('id') counterOfferId: string, @Request() req) {
+    return this.counterOffersService.deleteCounterOffer(counterOfferId, req.user.sub);
   }
 }

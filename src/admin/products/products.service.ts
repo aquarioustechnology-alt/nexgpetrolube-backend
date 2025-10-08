@@ -1,10 +1,11 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { ProductListingDto } from './dto/product-listing.dto';
 import { ProductResponseDto } from './dto/product-response.dto';
 import { ProductSortBy } from './dto/product-listing.dto';
+import { CsvUploadResponseDto, CsvProductDto } from './dto/csv-upload.dto';
 
 @Injectable()
 export class AdminProductsService {
@@ -261,6 +262,232 @@ export class AdminProductsService {
     await this.prisma.product.delete({
       where: { id },
     });
+  }
+
+  async uploadCsv(file: Express.Multer.File): Promise<CsvUploadResponseDto> {
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+
+    if (!file.originalname.endsWith('.csv')) {
+      throw new BadRequestException('File must be a CSV');
+    }
+
+    try {
+      const csvContent = file.buffer.toString('utf-8');
+      const products = this.parseCsv(csvContent);
+      
+      const result: CsvUploadResponseDto = {
+        successCount: 0,
+        errorCount: 0,
+        errors: [],
+        createdProducts: [],
+      };
+
+      for (const productData of products) {
+        try {
+          const createdProduct = await this.createProductFromCsv(productData);
+          result.successCount++;
+          result.createdProducts.push(createdProduct.name);
+        } catch (error) {
+          result.errorCount++;
+          result.errors.push(`Product "${productData.name}": ${error.message}`);
+        }
+      }
+
+      return result;
+    } catch (error) {
+      throw new BadRequestException(`Failed to process CSV: ${error.message}`);
+    }
+  }
+
+  private parseCsv(csvContent: string): CsvProductDto[] {
+    const lines = csvContent.split('\n').filter(line => line.trim());
+    if (lines.length < 2) {
+      throw new BadRequestException('CSV must have at least a header and one data row');
+    }
+
+    const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+    const products: CsvProductDto[] = [];
+
+    for (let i = 1; i < lines.length; i++) {
+      const values = this.parseCsvLine(lines[i]);
+      if (values.length !== headers.length) {
+        throw new BadRequestException(`Row ${i + 1} has ${values.length} columns but expected ${headers.length}`);
+      }
+
+      const productData: any = {};
+      headers.forEach((header, index) => {
+        productData[header] = values[index];
+      });
+
+      // Convert specifications columns to specifications object
+      const specifications: Record<string, any> = {};
+      Object.keys(productData).forEach(key => {
+        if (key.startsWith('specifications_') && productData[key] && productData[key].trim() !== '') {
+          const specKey = key.replace('specifications_', '');
+          specifications[specKey] = productData[key];
+        }
+      });
+
+      // Convert isActive to boolean
+      const isActive = productData.isActive?.toLowerCase() === 'true' || productData.isActive === 'TRUE';
+
+      products.push({
+        name: productData.name,
+        description: productData.description || undefined,
+        keyFeatures: productData.keyFeatures || undefined,
+        categoryName: productData.categoryName,
+        subcategoryName: productData.subcategoryName,
+        brandName: productData.brandName || undefined,
+        isActive: isActive,
+        specifications: Object.keys(specifications).length > 0 ? specifications : undefined,
+      });
+    }
+
+    return products;
+  }
+
+  private parseCsvLine(line: string): string[] {
+    const result: string[] = [];
+    let current = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      
+      if (char === '"') {
+        inQuotes = !inQuotes;
+      } else if (char === ',' && !inQuotes) {
+        result.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    
+    result.push(current.trim());
+    return result.map(value => value.replace(/^"|"$/g, ''));
+  }
+
+  private async createProductFromCsv(productData: CsvProductDto): Promise<ProductResponseDto> {
+    // Check if product already exists
+    const existingProduct = await this.prisma.product.findFirst({
+      where: { name: productData.name },
+    });
+
+    if (existingProduct) {
+      throw new ConflictException('Product with this name already exists');
+    }
+
+    // Find or create category
+    const category = await this.findOrCreateCategory(productData.categoryName);
+
+    // Find or create subcategory
+    const subcategory = await this.findOrCreateSubcategory(productData.subcategoryName, category.id);
+
+    // Find or create brand if provided
+    let brand = null;
+    if (productData.brandName) {
+      brand = await this.findOrCreateBrand(productData.brandName);
+    }
+
+    // Create product
+    const product = await this.prisma.product.create({
+      data: {
+        name: productData.name,
+        description: productData.description,
+        keyFeatures: productData.keyFeatures,
+        specifications: productData.specifications,
+        categoryId: category.id,
+        subcategoryId: subcategory.id,
+        brandId: brand?.id,
+        isActive: productData.isActive ?? true,
+      },
+      include: {
+        category: true,
+        subcategory: true,
+        brand: true,
+      },
+    });
+
+    return this.mapToResponseDto(product);
+  }
+
+  private async findOrCreateCategory(categoryName: string) {
+    const normalizedName = categoryName.toLowerCase().replace(/\s+/g, '');
+    
+    let category = await this.prisma.category.findFirst({
+      where: {
+        name: {
+          equals: categoryName,
+          mode: 'insensitive',
+        },
+        parentId: null, // Only main categories
+      },
+    });
+
+    if (!category) {
+      category = await this.prisma.category.create({
+        data: {
+          name: categoryName,
+          description: `Auto-created category for ${categoryName}`,
+          isActive: true,
+          sortOrder: 0,
+        },
+      });
+    }
+
+    return category;
+  }
+
+  private async findOrCreateSubcategory(subcategoryName: string, categoryId: string) {
+    let subcategory = await this.prisma.category.findFirst({
+      where: {
+        name: {
+          equals: subcategoryName,
+          mode: 'insensitive',
+        },
+        parentId: categoryId,
+      },
+    });
+
+    if (!subcategory) {
+      subcategory = await this.prisma.category.create({
+        data: {
+          name: subcategoryName,
+          description: `Auto-created subcategory for ${subcategoryName}`,
+          parentId: categoryId,
+          isActive: true,
+          sortOrder: 0,
+        },
+      });
+    }
+
+    return subcategory;
+  }
+
+  private async findOrCreateBrand(brandName: string) {
+    let brand = await this.prisma.brand.findFirst({
+      where: {
+        name: {
+          equals: brandName,
+          mode: 'insensitive',
+        },
+      },
+    });
+
+    if (!brand) {
+      brand = await this.prisma.brand.create({
+        data: {
+          name: brandName,
+          description: `Auto-created brand for ${brandName}`,
+          isActive: true,
+        },
+      });
+    }
+
+    return brand;
   }
 
   private mapToResponseDto(product: any): ProductResponseDto {
