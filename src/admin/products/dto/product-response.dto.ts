@@ -16,6 +16,9 @@ export class ProductResponseDto {
   @ApiPropertyOptional({ description: 'Product specifications as JSON', example: { viscosity: '5W-30', capacity: '4L' } })
   specifications?: any;
 
+  @ApiPropertyOptional({ description: 'Array of image URLs', example: ['uploads/product1.jpg', 'uploads/product2.jpg'] })
+  images?: string[];
+
   @ApiProperty({ description: 'Category ID', example: 'clx0123456789abcdefghijk' })
   categoryId: string;
 

@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, IsBoolean } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsArray } from 'class-validator';
 
 export class CsvUploadResponseDto {
   @ApiProperty({ description: 'Number of products successfully created', example: 10 })
@@ -48,7 +48,19 @@ export class CsvProductDto {
   @IsBoolean()
   isActive?: boolean;
 
-  @ApiPropertyOptional({ description: 'Product specifications as key-value pairs' })
+  @ApiPropertyOptional({ 
+    description: 'Product specifications as array of type-value pairs',
+    example: [
+      { type: 'Viscosity Grade', value: '5W-30' },
+      { type: 'API Classification', value: 'SN/CF' }
+    ]
+  })
   @IsOptional()
-  specifications?: Record<string, any>;
+  specifications?: Array<{ type: string; value: string }>;
+
+  @ApiPropertyOptional({ description: 'Array of image URLs', example: ['uploads/product1.jpg', 'uploads/product2.jpg'] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  images?: string[];
 }

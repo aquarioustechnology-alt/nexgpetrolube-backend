@@ -114,6 +114,15 @@ export class AdminRequirementOffersController {
     }, adminId);
   }
 
+  @Get(':id/counter-offers')
+  @MODERATOR_AND_ABOVE
+  @ApiOperation({ summary: 'Get counter offers for a specific offer (Admin)' })
+  @ApiResponse({ status: 200, description: 'Counter offers retrieved successfully' })
+  @ApiResponse({ status: 404, description: 'Offer not found' })
+  getCounterOffers(@Param('id') id: string) {
+    return this.adminRequirementOffersService.getCounterOffersForAdmin(id);
+  }
+
   @Get('stats/overview')
   @MODERATOR_AND_ABOVE
   @ApiOperation({ summary: 'Get requirement offers statistics for admin dashboard' })

@@ -55,6 +55,27 @@ The NexGPetrolube Backend API is a comprehensive NestJS-based backend service th
 - **Analytics Dashboard**: Platform statistics and KPIs
 - **Audit Logging**: Comprehensive activity tracking
 
+### 🔄 Real-time Communication
+
+- **WebSocket Gateway**: Real-time communication for auctions and notifications
+- **Live Auction Rooms**: Dynamic auction room management with participant tracking
+- **Bid Broadcasting**: Real-time bid updates to all auction participants
+- **Notification Broadcasting**: Instant notification delivery to connected clients
+
+### 📦 Advanced Logistics
+
+- **Logistics Tracking**: Complete logistics entry creation and management
+- **Status Updates**: Real-time logistics status tracking and updates
+- **Delivery Management**: Comprehensive delivery tracking and coordination
+- **Transportation Coordination**: Multi-modal transportation management
+
+### 💬 Communication Systems
+
+- **Bids Management**: Comprehensive bidding system with bid history and analytics
+- **Quotes System**: Quote generation and management for negotiations
+- **Counter Offers**: Advanced negotiation system with counter-offer capabilities
+- **Notifications Service**: Real-time notification system for users
+
 ## Technology Stack
 
 - **Framework**: NestJS 10.x with TypeScript

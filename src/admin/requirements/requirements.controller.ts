@@ -128,7 +128,11 @@ export class AdminRequirementsController {
   @ApiOperation({ summary: 'Get requirements statistics for admin dashboard' })
   @ApiResponse({ status: 200, description: 'Statistics retrieved successfully' })
   @ApiQuery({ name: 'userType', required: false, enum: ['BUYER', 'SELLER', 'BOTH'], description: 'Filter by user type' })
-  getStats(@Query('userType') userType?: 'BUYER' | 'SELLER' | 'BOTH') {
-    return this.adminRequirementsService.getAdminStats(userType);
+  @ApiQuery({ name: 'postingType', required: false, enum: ['REQUIREMENT', 'REVERSE_BIDDING', 'STANDARD_BIDDING'], description: 'Filter by posting type' })
+  getStats(
+    @Query('userType') userType?: 'BUYER' | 'SELLER' | 'BOTH',
+    @Query('postingType') postingType?: 'REQUIREMENT' | 'REVERSE_BIDDING' | 'STANDARD_BIDDING'
+  ) {
+    return this.adminRequirementsService.getAdminStats(userType, postingType);
   }
 }

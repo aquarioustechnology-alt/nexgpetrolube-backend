@@ -218,9 +218,11 @@ export class AdminRequirementsService {
     return this.requirementsService.rejectRequirement(id, rejectionReason, adminId);
   }
 
-  async getAdminStats(userType?: 'BUYER' | 'SELLER' | 'BOTH') {
-    // Build base where clause for userType filtering
-    const baseWhere = userType ? { userType } : {};
+  async getAdminStats(userType?: 'BUYER' | 'SELLER' | 'BOTH', postingType?: 'REQUIREMENT' | 'REVERSE_BIDDING' | 'STANDARD_BIDDING') {
+    // Build base where clause for userType and postingType filtering
+    const baseWhere: any = {};
+    if (userType) baseWhere.userType = userType;
+    if (postingType) baseWhere.postingType = postingType;
     
     const [
       totalRequirements,

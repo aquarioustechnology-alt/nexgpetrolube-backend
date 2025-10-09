@@ -68,6 +68,7 @@ export class AdminProductsService {
         description: createProductDto.description,
         keyFeatures: createProductDto.keyFeatures,
         specifications: createProductDto.specifications,
+        images: createProductDto.images || [],
         categoryId: createProductDto.categoryId,
         subcategoryId: createProductDto.subcategoryId,
         brandId: createProductDto.brandId,
@@ -269,12 +270,23 @@ export class AdminProductsService {
       throw new BadRequestException('No file uploaded');
     }
 
-    if (!file.originalname.endsWith('.csv')) {
+    if (!file.originalname.toLowerCase().endsWith('.csv')) {
       throw new BadRequestException('File must be a CSV');
+    }
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      throw new BadRequestException('File size too large. Maximum allowed size is 10MB');
     }
 
     try {
       const csvContent = file.buffer.toString('utf-8');
+      
+      // Validate CSV content is not empty
+      if (!csvContent.trim()) {
+        throw new BadRequestException('CSV file is empty');
+      }
+      
       const products = this.parseCsv(csvContent);
       
       const result: CsvUploadResponseDto = {
@@ -321,12 +333,15 @@ export class AdminProductsService {
         productData[header] = values[index];
       });
 
-      // Convert specifications columns to specifications object
-      const specifications: Record<string, any> = {};
+      // Convert specifications columns to specifications array
+      const specifications: Array<{ type: string; value: string }> = [];
       Object.keys(productData).forEach(key => {
         if (key.startsWith('specifications_') && productData[key] && productData[key].trim() !== '') {
-          const specKey = key.replace('specifications_', '');
-          specifications[specKey] = productData[key];
+          const specType = key.replace('specifications_', '');
+          specifications.push({
+            type: specType,
+            value: productData[key]
+          });
         }
       });
 
@@ -341,7 +356,7 @@ export class AdminProductsService {
         subcategoryName: productData.subcategoryName,
         brandName: productData.brandName || undefined,
         isActive: isActive,
-        specifications: Object.keys(specifications).length > 0 ? specifications : undefined,
+        specifications: specifications.length > 0 ? specifications : undefined,
       });
     }
 
@@ -497,6 +512,7 @@ export class AdminProductsService {
       description: product.description,
       keyFeatures: product.keyFeatures,
       specifications: product.specifications,
+      images: product.images || [],
       categoryId: product.categoryId,
       subcategoryId: product.subcategoryId,
       brandId: product.brandId,

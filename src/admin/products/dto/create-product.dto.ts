@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, IsBoolean } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsArray } from 'class-validator';
 
 export class CreateProductDto {
   @ApiProperty({ description: 'Name of the product', example: 'Shell Helix Ultra 5W-30' })
@@ -19,6 +19,12 @@ export class CreateProductDto {
   @ApiPropertyOptional({ description: 'Product specifications as JSON', example: { viscosity: '5W-30', capacity: '4L', type: 'Synthetic' } })
   @IsOptional()
   specifications?: any;
+
+  @ApiPropertyOptional({ description: 'Array of image URLs', example: ['uploads/product1.jpg', 'uploads/product2.jpg'] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  images?: string[];
 
   @ApiProperty({ description: 'Category ID', example: 'clx0123456789abcdefghijk' })
   @IsString()

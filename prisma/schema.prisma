@@ -194,6 +194,7 @@ model Product {
   description    String?
   keyFeatures    String?
   specifications Json?
+  images         String[]      @default([])
   categoryId     String
   subcategoryId  String?
   brandId        String?

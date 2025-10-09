@@ -361,6 +361,79 @@ export class AdminRequirementOffersService {
     return { message: 'Offer deleted successfully' };
   }
 
+  async getCounterOffersForAdmin(offerId: string) {
+    // First verify the offer exists
+    const offer = await this.prisma.offer.findUnique({
+      where: { id: offerId },
+      select: { id: true, negotiableType: true }
+    });
+
+    if (!offer) {
+      throw new NotFoundException('Offer not found');
+    }
+
+    // Check if the offer is negotiable
+    if (offer.negotiableType !== 'negotiable') {
+      return {
+        offerId: offer.id,
+        negotiableType: offer.negotiableType,
+        counterOffers: [],
+        message: 'This offer is not negotiable'
+      };
+    }
+
+    // Get counter offers for this offer
+    const counterOffers = await this.prisma.counterOffer.findMany({
+      where: {
+        offerId: offerId,
+      },
+      include: {
+        fromUser: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            companyName: true,
+            email: true,
+          },
+        },
+        offer: {
+          select: {
+            id: true,
+            offeredUnitPrice: true,
+            offeredQuantity: true,
+            offerStatus: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return {
+      offerId: offer.id,
+      negotiableType: offer.negotiableType,
+      counterOffers: counterOffers.map(counterOffer => ({
+        id: counterOffer.id,
+        counterofferNumber: counterOffer.counterofferNumber,
+        offeredPrice: Number(counterOffer.offeredPrice),
+        offeredQuantity: counterOffer.offeredQuantity,
+        status: counterOffer.status,
+        expiresAt: counterOffer.expiresAt,
+        createdAt: counterOffer.createdAt,
+        updatedAt: counterOffer.updatedAt,
+        fromUser: counterOffer.fromUser,
+        originalOffer: {
+          id: counterOffer.offer.id,
+          offeredUnitPrice: Number(counterOffer.offer.offeredUnitPrice),
+          offeredQuantity: counterOffer.offer.offeredQuantity,
+          offerStatus: counterOffer.offer.offerStatus,
+        },
+      })),
+    };
+  }
+
   async getAdminStats(requirementOwnerType?: 'BUYER' | 'SELLER' | 'BOTH') {
     // Build base where clause for requirementOwnerType filtering
     const baseWhere = requirementOwnerType ? { requirementOwnerType } : {};
