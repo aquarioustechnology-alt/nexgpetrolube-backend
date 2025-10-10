@@ -123,9 +123,9 @@ temp/
 .env.test.local
 .env.production.local
 
-# Uploads
-uploads/
-public/uploads/
+# Uploads (runtime directories only)
+/uploads/
+/public/uploads/
 
 # Database
 *.db
