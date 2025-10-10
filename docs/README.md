@@ -301,10 +301,12 @@ socket.on('auction_ended', (auction) => console.log('Auction ended:', auction));
 ```
 
 ### File Upload Integration
-- **Single File**: `POST /api/v1/upload/single`
-- **Multiple Files**: `POST /api/v1/upload/multiple`
-- **File Types**: Images, PDFs, documents
-- **Storage**: AWS S3 with local fallback
+- **Single File**: `POST /api/v1/upload/single` (AWS S3)
+- **Multiple Files**: `POST /api/v1/upload/multiple` (AWS S3)
+- **Admin Uploads**: `POST /api/v1/admin/uploads/upload` (AWS S3 with metadata)
+- **File Types**: Images, PDFs, documents, CSV files
+- **Storage**: AWS S3 with signed URLs for secure access
+- **CSV Image Processing**: Automatic image download and S3 upload from CSV URLs
 
 ## Monitoring & Logging
 

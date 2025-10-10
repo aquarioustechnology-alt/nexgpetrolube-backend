@@ -282,6 +282,15 @@ model Requirement {
   quotesCount      Int                @default(0)
   deadline         DateTime?
   postedAt         DateTime           @default(now())
+  // Bidding-specific fields
+  biddingStartDate String?
+  biddingStartTime String?
+  biddingEndDate   String?
+  biddingEndTime   String?
+  minimumBidDecrement String?
+  enableH1H2Split  Boolean            @default(false)
+  h1H2SplitRatio  String?
+  reservePrice     String?
   // Admin approval fields
   adminStatus      RequirementStatus? @default(PENDING)
   approvedBy       String?
@@ -862,4 +871,23 @@ enum LogisticsStatus {
   IN_TRANSIT
   DELIVERED
   CANCELLED
+}
+
+model Upload {
+  id          String   @id @default(cuid())
+  filename    String
+  originalName String
+  mimeType    String
+  size        Int
+  path        String
+  url         String
+  uploadedBy  String
+  uploadedAt  DateTime @default(now())
+  description String?
+  tags        String[] @default([])
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("uploads")
 }

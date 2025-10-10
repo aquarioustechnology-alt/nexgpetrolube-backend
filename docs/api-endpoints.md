@@ -806,34 +806,98 @@ Authorization: Bearer <token>
 
 ### Upload Files
 
-#### Single File Upload
+#### Single File Upload (AWS S3)
 ```http
 POST /api/v1/upload/single
 Authorization: Bearer <token>
 Content-Type: multipart/form-data
 
 file: [binary file data]
-type: "kyc" | "profile" | "product" | "listing"
 ```
 
 **Response**:
 ```json
 {
-  "filename": "document-123.pdf",
-  "url": "/uploads/kyc/document-123.pdf",
+  "filename": "uuid-generated-filename.jpg",
+  "url": "https://bucket.s3.region.amazonaws.com/uploads/uuid-generated-filename.jpg",
   "size": 1024000,
-  "mimeType": "application/pdf"
+  "mimetype": "image/jpeg"
 }
 ```
 
-#### Multiple Files Upload
+#### Multiple Files Upload (AWS S3)
 ```http
 POST /api/v1/upload/multiple
 Authorization: Bearer <token>
 Content-Type: multipart/form-data
 
 files: [binary file data array]
-type: "kyc" | "listing" | "product"
+```
+
+#### Admin File Uploads (AWS S3 with Metadata)
+```http
+POST /api/v1/admin/uploads/upload
+Authorization: Bearer <admin-token>
+Content-Type: multipart/form-data
+
+file: [binary file data]
+description: "File description"
+tags: ["tag1", "tag2"]
+```
+
+**Response**:
+```json
+{
+  "id": "upload-id",
+  "filename": "uuid-generated-filename.jpg",
+  "originalName": "original-filename.jpg",
+  "url": "https://bucket.s3.region.amazonaws.com/uploads/uuid-generated-filename.jpg",
+  "size": 1024000,
+  "mimeType": "image/jpeg",
+  "uploadedBy": "admin-id",
+  "description": "File description",
+  "tags": ["tag1", "tag2"],
+  "isActive": true,
+  "createdAt": "2024-01-01T00:00:00.000Z"
+}
+```
+
+#### Get Signed Download URL
+```http
+GET /api/v1/admin/uploads/{id}/signed-url?expiresIn=3600
+Authorization: Bearer <admin-token>
+```
+
+**Response**:
+```json
+{
+  "url": "https://bucket.s3.region.amazonaws.com/uploads/filename.jpg?X-Amz-Algorithm=..."
+}
+```
+
+#### CSV Upload with Image Processing
+```http
+POST /api/v1/admin/products/upload-csv
+Authorization: Bearer <admin-token>
+Content-Type: multipart/form-data
+
+file: [CSV file with images column]
+```
+
+**CSV Format**:
+```csv
+name,description,categoryName,subcategoryName,brandName,isActive,images,specifications_viscosity100C
+"Product Name","Product Description",CATEGORY,SUBCATEGORY,BRAND,TRUE,"https://example.com/image1.jpg;https://example.com/image2.jpg",22
+```
+
+**Response**:
+```json
+{
+  "successCount": 1,
+  "errorCount": 0,
+  "errors": [],
+  "createdProducts": ["Product Name"]
+}
 ```
 
 ## Notification Endpoints

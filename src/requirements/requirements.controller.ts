@@ -59,7 +59,7 @@ export class RequirementsController {
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (default: 10, max: 100)' })
   @ApiQuery({ name: 'search', required: false, type: String, description: 'Search query for title, description, or product name' })
   @ApiQuery({ name: 'userType', required: false, enum: ['SELLER', 'BUYER'], description: 'Filter by user type' })
-  @ApiQuery({ name: 'postingType', required: false, enum: ['REQUIREMENT', 'REVERSE_BIDDING', 'STANDARD_BIDDING'], description: 'Filter by posting type' })
+  @ApiQuery({ name: 'postingType', required: false, enum: ['REQUIREMENT', 'REVERSE_BIDDING', 'STANDARD_BIDDING'], description: 'Filter by posting type (comma-separated for multiple types)' })
   @ApiQuery({ name: 'negotiableType', required: false, enum: ['negotiable', 'non_negotiable'], description: 'Filter by negotiable type' })
   @ApiQuery({ name: 'category', required: false, type: String, description: 'Filter by category name' })
   @ApiQuery({ name: 'sortBy', required: false, enum: ['createdAt', 'updatedAt', 'title', 'unitPrice'], description: 'Sort field (default: createdAt)' })
@@ -132,7 +132,7 @@ export class RequirementsController {
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page' })
   @ApiQuery({ name: 'status', required: false, enum: RequirementStatus, description: 'Filter by status' })
-  @ApiQuery({ name: 'postingType', required: false, enum: ['REQUIREMENT', 'REVERSE_BIDDING', 'STANDARD_BIDDING'], description: 'Filter by posting type' })
+  @ApiQuery({ name: 'postingType', required: false, enum: ['REQUIREMENT', 'REVERSE_BIDDING', 'STANDARD_BIDDING'], description: 'Filter by posting type (comma-separated for multiple types)' })
   @ApiQuery({ name: 'search', required: false, type: String, description: 'Search query' })
   @ApiQuery({ name: 'userType', required: false, enum: ['SELLER', 'BUYER', 'BOTH'], description: 'Filter by user type' })
   getDashboardListing(

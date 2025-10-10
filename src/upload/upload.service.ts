@@ -1,17 +1,26 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { UploadFileResponseDto } from './dto/upload-file.dto';
+import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { v4 as uuidv4 } from 'uuid';
 import * as path from 'path';
-import * as fs from 'fs';
 
 @Injectable()
 export class UploadService {
-  private readonly uploadPath: string;
+  private readonly s3Client: S3Client;
+  private readonly bucketName: string;
   private readonly maxFileSize: number;
   private readonly allowedMimeTypes: string[];
 
   constructor(private configService: ConfigService) {
-    this.uploadPath = path.join(process.cwd(), 'uploads');
+    this.s3Client = new S3Client({
+      region: process.env.AWS_REGION,
+      credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      },
+    });
+    this.bucketName = process.env.AWS_S3_BUCKET;
     this.maxFileSize = 10 * 1024 * 1024; // 10MB
     this.allowedMimeTypes = [
       'image/jpeg',
@@ -23,23 +32,12 @@ export class UploadService {
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       'text/plain'
     ];
-
-    // Ensure upload directory exists
-    this.ensureUploadDirectory();
-  }
-
-  private ensureUploadDirectory() {
-    if (!fs.existsSync(this.uploadPath)) {
-      fs.mkdirSync(this.uploadPath, { recursive: true });
-    }
   }
 
   private generateUniqueFilename(originalName: string): string {
     const ext = path.extname(originalName);
-    const name = path.basename(originalName, ext);
-    const timestamp = Date.now();
-    const random = Math.random().toString(36).substring(2, 8);
-    return `${name}_${timestamp}_${random}${ext}`;
+    const uniqueFilename = `${uuidv4()}${ext}`;
+    return uniqueFilename;
   }
 
   private validateFile(file: Express.Multer.File): void {
@@ -60,20 +58,35 @@ export class UploadService {
     this.validateFile(file);
 
     const uniqueFilename = this.generateUniqueFilename(file.originalname);
-    const filePath = path.join(this.uploadPath, uniqueFilename);
+    const s3Key = `uploads/${uniqueFilename}`;
 
-    // Save file to disk
-    fs.writeFileSync(filePath, file.buffer);
+    try {
+      // Upload file to S3
+      const uploadCommand = new PutObjectCommand({
+        Bucket: this.bucketName,
+        Key: s3Key,
+        Body: file.buffer,
+        ContentType: file.mimetype,
+        Metadata: {
+          originalName: file.originalname,
+        },
+      });
 
-    const baseUrl = this.configService.get('BASE_URL', 'http://localhost:8000');
-    const fileUrl = `${baseUrl}/uploads/${uniqueFilename}`;
+      await this.s3Client.send(uploadCommand);
 
-    return {
-      filename: uniqueFilename,
-      url: fileUrl,
-      size: file.size,
-      mimetype: file.mimetype,
-    };
+      // Generate S3 URL
+      const fileUrl = `https://${this.bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${s3Key}`;
+
+      return {
+        filename: uniqueFilename,
+        url: fileUrl,
+        size: file.size,
+        mimetype: file.mimetype,
+      };
+    } catch (error) {
+      console.error('S3 upload error:', error);
+      throw new BadRequestException('Failed to upload file to S3');
+    }
   }
 
   async uploadMultipleFiles(files: Express.Multer.File[]): Promise<UploadFileResponseDto[]> {
@@ -90,10 +103,18 @@ export class UploadService {
   }
 
   async deleteFile(filename: string): Promise<void> {
-    const filePath = path.join(this.uploadPath, filename);
+    const s3Key = `uploads/${filename}`;
     
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
+    try {
+      const deleteCommand = new DeleteObjectCommand({
+        Bucket: this.bucketName,
+        Key: s3Key,
+      });
+
+      await this.s3Client.send(deleteCommand);
+    } catch (error) {
+      console.error('S3 delete error:', error);
+      throw new BadRequestException('Failed to delete file from S3');
     }
   }
 }

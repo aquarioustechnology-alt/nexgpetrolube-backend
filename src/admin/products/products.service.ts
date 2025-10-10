@@ -6,10 +6,28 @@ import { ProductListingDto } from './dto/product-listing.dto';
 import { ProductResponseDto } from './dto/product-response.dto';
 import { ProductSortBy } from './dto/product-listing.dto';
 import { CsvUploadResponseDto, CsvProductDto } from './dto/csv-upload.dto';
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { v4 as uuidv4 } from 'uuid';
+import * as path from 'path';
+import axios from 'axios';
+import { Express } from 'express';
+import multer from 'multer';
 
 @Injectable()
 export class AdminProductsService {
-  constructor(private prisma: PrismaService) {}
+  private readonly s3Client: S3Client;
+  private readonly bucketName: string;
+
+  constructor(private prisma: PrismaService) {
+    this.s3Client = new S3Client({
+      region: process.env.AWS_REGION,
+      credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      },
+    });
+    this.bucketName = process.env.AWS_S3_BUCKET;
+  }
 
   async create(createProductDto: CreateProductDto): Promise<ProductResponseDto> {
     // Check if product name already exists
@@ -265,7 +283,7 @@ export class AdminProductsService {
     });
   }
 
-  async uploadCsv(file: Express.Multer.File): Promise<CsvUploadResponseDto> {
+  async uploadCsv(file: any): Promise<CsvUploadResponseDto> {
     if (!file) {
       throw new BadRequestException('No file uploaded');
     }
@@ -348,6 +366,11 @@ export class AdminProductsService {
       // Convert isActive to boolean
       const isActive = productData.isActive?.toLowerCase() === 'true' || productData.isActive === 'TRUE';
 
+      // Parse images from semicolon-separated string
+      const images = productData.images ? 
+        productData.images.split(';').map(url => url.trim()).filter(url => url.length > 0) : 
+        [];
+
       products.push({
         name: productData.name,
         description: productData.description || undefined,
@@ -357,6 +380,7 @@ export class AdminProductsService {
         brandName: productData.brandName || undefined,
         isActive: isActive,
         specifications: specifications.length > 0 ? specifications : undefined,
+        images: images,
       });
     }
 
@@ -385,6 +409,51 @@ export class AdminProductsService {
     return result.map(value => value.replace(/^"|"$/g, ''));
   }
 
+  private async processImagesFromUrls(imageUrls: string[]): Promise<string[]> {
+    if (!imageUrls || imageUrls.length === 0) {
+      return [];
+    }
+
+    const uploadedImageUrls: string[] = [];
+
+    for (const imageUrl of imageUrls) {
+      try {
+        // Download image from URL
+        const response = await axios.get(imageUrl, {
+          responseType: 'arraybuffer',
+          timeout: 10000, // 10 second timeout
+        });
+
+        // Generate unique filename
+        const fileExtension = path.extname(imageUrl) || '.jpg';
+        const uniqueFilename = `${uuidv4()}${fileExtension}`;
+        const s3Key = `products/${uniqueFilename}`;
+
+        // Upload to S3
+        const uploadCommand = new PutObjectCommand({
+          Bucket: this.bucketName,
+          Key: s3Key,
+          Body: Buffer.from(response.data),
+          ContentType: response.headers['content-type'] || 'image/jpeg',
+          Metadata: {
+            originalUrl: imageUrl,
+          },
+        });
+
+        await this.s3Client.send(uploadCommand);
+
+        // Generate S3 URL
+        const s3Url = `https://${this.bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${s3Key}`;
+        uploadedImageUrls.push(s3Url);
+
+      } catch (error) {
+        console.error(`Failed to process image ${imageUrl}:`, error.message);
+        // Continue with other images if one fails
+      }
+    }
+
+    return uploadedImageUrls;
+  }
   private async createProductFromCsv(productData: CsvProductDto): Promise<ProductResponseDto> {
     // Check if product already exists
     const existingProduct = await this.prisma.product.findFirst({
@@ -394,6 +463,9 @@ export class AdminProductsService {
     if (existingProduct) {
       throw new ConflictException('Product with this name already exists');
     }
+
+    // Process images from URLs
+    const processedImages = await this.processImagesFromUrls(productData.images || []);
 
     // Find or create category
     const category = await this.findOrCreateCategory(productData.categoryName);
@@ -414,6 +486,7 @@ export class AdminProductsService {
         description: productData.description,
         keyFeatures: productData.keyFeatures,
         specifications: productData.specifications,
+        images: processedImages, // Store processed S3 URLs
         categoryId: category.id,
         subcategoryId: subcategory.id,
         brandId: brand?.id,

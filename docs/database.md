@@ -1200,6 +1200,65 @@ pg_dump -h localhost -U $DB_USER -d $DB_NAME > $BACKUP_DIR/backup_$DATE.sql
 find $BACKUP_DIR -name "backup_*.sql" -mtime +7 -delete
 ```
 
+## File Management
+
+### Upload Management
+
+#### Uploads Table
+```prisma
+model Upload {
+  id          String   @id @default(cuid())
+  filename    String
+  originalName String
+  mimeType    String
+  size        Int
+  path        String   // S3 key for file storage
+  url         String   // Complete S3 URL
+  uploadedBy  String
+  uploadedAt  DateTime @default(now())
+  description String?
+  tags        String[] @default([])
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("uploads")
+}
+```
+
+**Key Features**:
+- **S3 Integration**: `path` field stores S3 key, `url` field stores complete S3 URL
+- **Metadata Tracking**: File descriptions, tags, and upload history
+- **Access Control**: Track who uploaded what files
+- **Soft Delete**: `isActive` flag for file management
+
+**Usage Example**:
+```typescript
+// Create upload record
+const upload = await prisma.upload.create({
+  data: {
+    filename: 'uuid-generated-filename.jpg',
+    originalName: 'product-image.jpg',
+    mimeType: 'image/jpeg',
+    size: 1024000,
+    path: 'uploads/uuid-generated-filename.jpg', // S3 key
+    url: 'https://bucket.s3.region.amazonaws.com/uploads/uuid-generated-filename.jpg',
+    uploadedBy: 'admin-id',
+    description: 'Product image',
+    tags: ['product', 'image'],
+  },
+});
+
+// Query uploads with filters
+const uploads = await prisma.upload.findMany({
+  where: {
+    isActive: true,
+    tags: { hasSome: ['product'] },
+  },
+  orderBy: { createdAt: 'desc' },
+});
+```
+
 ## Database Monitoring
 
 ### Query Performance Monitoring

@@ -11,7 +11,7 @@ The NexGPetrolube Backend API follows a modular, scalable architecture built on 
 - **Dependency Injection**: Services and dependencies are injected through NestJS DI container
 - **Separation of Concerns**: Clear separation between controllers, services, and data access layers
 
-### 2. Layered Architecture
+### 3. Layered Architecture with AWS S3 Integration
 ```
 ┌─────────────────────────────────────┐
 │           Presentation Layer        │
@@ -22,6 +22,9 @@ The NexGPetrolube Backend API follows a modular, scalable architecture built on 
 ├─────────────────────────────────────┤
 │           Data Access Layer         │
 │         (Prisma ORM)                │
+├─────────────────────────────────────┤
+│           External Services         │
+│      (AWS S3, Email, Payment)      │
 ├─────────────────────────────────────┤
 │           Database Layer            │
 │         (PostgreSQL)                │

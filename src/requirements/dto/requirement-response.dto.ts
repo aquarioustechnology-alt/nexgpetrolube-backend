@@ -126,6 +126,31 @@ export class RequirementResponseDto {
   @ApiProperty({ required: false })
   deadline?: Date;
 
+  // Bidding-specific fields
+  @ApiProperty({ required: false })
+  biddingStartDate?: string;
+
+  @ApiProperty({ required: false })
+  biddingStartTime?: string;
+
+  @ApiProperty({ required: false })
+  biddingEndDate?: string;
+
+  @ApiProperty({ required: false })
+  biddingEndTime?: string;
+
+  @ApiProperty({ required: false })
+  minimumBidDecrement?: string;
+
+  @ApiProperty({ required: false })
+  enableH1H2Split?: boolean;
+
+  @ApiProperty({ required: false })
+  h1H2SplitRatio?: string;
+
+  @ApiProperty({ required: false })
+  reservePrice?: string;
+
   @ApiProperty()
   postedAt: Date;
 

@@ -54,12 +54,12 @@ API_PREFIX="api/v1"
 FRONTEND_URL="http://localhost:3000"
 ADMIN_URL="http://localhost:3001"
 
-# File Upload - Local Storage
-AWS_ACCESS_KEY_ID=""
-AWS_SECRET_ACCESS_KEY=""
+# File Upload - AWS S3
+AWS_ACCESS_KEY_ID="your-access-key-id"
+AWS_SECRET_ACCESS_KEY="your-secret-access-key"
 AWS_REGION="ap-south-1"
-AWS_S3_BUCKET="nexg-petrolube-dev"
-AWS_S3_ENDPOINT="http://localhost:9000"
+AWS_S3_BUCKET="nexg-project-uploads-dev"
+AWS_S3_ENDPOINT="https://s3.ap-south-1.amazonaws.com"
 
 # Email Configuration
 SMTP_HOST="smtp.gmail.com"
@@ -125,7 +125,7 @@ ADMIN_URL="https://admin-staging.nexgpetrolube.com"
 AWS_ACCESS_KEY_ID="AKIA..."
 AWS_SECRET_ACCESS_KEY="..."
 AWS_REGION="ap-south-1"
-AWS_S3_BUCKET="nexg-petrolube-staging"
+AWS_S3_BUCKET="nexg-project-uploads-staging"
 AWS_S3_ENDPOINT="https://s3.ap-south-1.amazonaws.com"
 
 # Email Configuration

@@ -537,7 +537,7 @@ await this.notificationsService.markAsRead(notificationId, userId);
 
 ### 9. Upload Service (`UploadService`)
 
-**Purpose**: File upload management, storage, and file operations
+**Purpose**: File upload management, storage, and file operations with AWS S3 integration
 
 **Key Methods**:
 
@@ -545,46 +545,43 @@ await this.notificationsService.markAsRead(notificationId, userId);
 @Injectable()
 export class UploadService {
   constructor(
-    private s3Service: S3Service,
     private configService: ConfigService,
   ) {}
 
-  // File upload operations
-  async uploadSingle(file: Express.Multer.File, type: UploadType): Promise<UploadResult>
-  async uploadMultiple(files: Express.Multer.File[], type: UploadType): Promise<UploadResult[]>
-  async uploadToS3(file: Express.Multer.File, key: string): Promise<S3UploadResult>
-  async uploadToLocal(file: Express.Multer.File, path: string): Promise<LocalUploadResult>
+  // File upload operations (AWS S3)
+  async uploadFile(file: Express.Multer.File): Promise<UploadFileResponseDto>
+  async uploadMultipleFiles(files: Express.Multer.File[]): Promise<UploadFileResponseDto[]>
+  async deleteFile(filename: string): Promise<void>
   
-  // File management
-  async deleteFile(fileUrl: string): Promise<void>
-  async getFileUrl(filePath: string): Promise<string>
-  async validateFile(file: Express.Multer.File, type: UploadType): Promise<boolean>
+  // File validation
+  private validateFile(file: Express.Multer.File): void
+  private generateUniqueFilename(originalName: string): string
   
-  // File processing
-  async resizeImage(file: Express.Multer.File, dimensions: ImageDimensions): Promise<Buffer>
-  async generateThumbnail(file: Express.Multer.File): Promise<Buffer>
-  async compressFile(file: Express.Multer.File): Promise<Buffer>
-  
-  // Storage management
-  async getStorageStats(): Promise<StorageStats>
-  async cleanupOldFiles(): Promise<void>
+  // AWS S3 operations
+  private uploadToS3(file: Express.Multer.File, s3Key: string): Promise<void>
+  private deleteFromS3(s3Key: string): Promise<void>
 }
 ```
 
 **Usage Example**:
 ```typescript
-// Upload single file
-const result = await this.uploadService.uploadSingle(file, 'KYC');
+// Upload single file to S3
+const result = await this.uploadService.uploadFile(file);
+// Returns: { filename: "uuid-generated.jpg", url: "https://bucket.s3.region.amazonaws.com/uploads/uuid-generated.jpg", size: 1024000, mimetype: "image/jpeg" }
 
-// Upload multiple files
-const results = await this.uploadService.uploadMultiple(files, 'LISTING');
+// Upload multiple files to S3
+const results = await this.uploadService.uploadMultipleFiles(files);
 
-// Generate thumbnail
-const thumbnail = await this.uploadService.generateThumbnail(imageFile);
-
-// Delete file
-await this.uploadService.deleteFile('/uploads/kyc/document-123.pdf');
+// Delete file from S3
+await this.uploadService.deleteFile('uuid-generated.jpg');
 ```
+
+**AWS S3 Integration Features**:
+- **Automatic S3 Upload**: All files uploaded directly to AWS S3
+- **Unique Filenames**: UUID-based naming prevents conflicts
+- **File Validation**: Size limits (10MB) and MIME type validation
+- **S3 URL Generation**: Direct S3 URLs for file access
+- **Error Handling**: Comprehensive error handling for S3 operations
 
 ### 10. Payments Service (`PaymentsService`)
 

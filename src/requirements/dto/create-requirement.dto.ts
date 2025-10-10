@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsOptional, IsEnum, IsArray, IsDateString, IsJSON } from 'class-validator';
+import { IsString, IsOptional, IsEnum, IsArray, IsDateString, IsJSON, IsBoolean } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { UserRole } from '@prisma/client';
 
@@ -176,4 +176,45 @@ export class CreateRequirementDto {
   @IsOptional()
   @IsDateString()
   deadline?: string;
+
+  // Bidding-specific fields
+  @ApiProperty({ description: 'Bidding start date', required: false })
+  @IsOptional()
+  @IsDateString()
+  biddingStartDate?: string;
+
+  @ApiProperty({ description: 'Bidding start time', required: false })
+  @IsOptional()
+  @IsString()
+  biddingStartTime?: string;
+
+  @ApiProperty({ description: 'Bidding end date', required: false })
+  @IsOptional()
+  @IsDateString()
+  biddingEndDate?: string;
+
+  @ApiProperty({ description: 'Bidding end time', required: false })
+  @IsOptional()
+  @IsString()
+  biddingEndTime?: string;
+
+  @ApiProperty({ description: 'Minimum bid decrement', required: false })
+  @IsOptional()
+  @IsString()
+  minimumBidDecrement?: string;
+
+  @ApiProperty({ description: 'Enable H1/H2 split', required: false })
+  @IsOptional()
+  @IsBoolean()
+  enableH1H2Split?: boolean;
+
+  @ApiProperty({ description: 'H1/H2 split ratio', required: false })
+  @IsOptional()
+  @IsString()
+  h1H2SplitRatio?: string;
+
+  @ApiProperty({ description: 'Reserve price for reverse bidding', required: false })
+  @IsOptional()
+  @IsString()
+  reservePrice?: string;
 }

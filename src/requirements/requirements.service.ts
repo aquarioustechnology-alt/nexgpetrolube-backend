@@ -4,7 +4,7 @@ import { CreateRequirementDto } from './dto/create-requirement.dto';
 import { UpdateRequirementDto } from './dto/update-requirement.dto';
 import { RequirementResponseDto } from './dto/requirement-response.dto';
 import { PostingType, RequirementStatus } from './dto/create-requirement.dto';
-import { RequirementStatus as PrismaRequirementStatus } from '@prisma/client';
+import { RequirementStatus as PrismaRequirementStatus, AuctionType, AuctionStatus } from '@prisma/client';
 
 @Injectable()
 export class RequirementsService {
@@ -95,6 +95,15 @@ export class RequirementsService {
       visibleState: createRequirementDto.visibleState,
       visibleCity: createRequirementDto.visibleCity,
       deadline: createRequirementDto.deadline ? new Date(createRequirementDto.deadline) : null,
+      // Bidding-specific fields
+      biddingStartDate: createRequirementDto.biddingStartDate,
+      biddingStartTime: createRequirementDto.biddingStartTime,
+      biddingEndDate: createRequirementDto.biddingEndDate,
+      biddingEndTime: createRequirementDto.biddingEndTime,
+      minimumBidDecrement: createRequirementDto.minimumBidDecrement,
+      enableH1H2Split: createRequirementDto.enableH1H2Split || false,
+      h1H2SplitRatio: createRequirementDto.h1H2SplitRatio,
+      reservePrice: createRequirementDto.reservePrice,
     };
 
     const requirement = await this.prisma.requirement.create({
@@ -115,6 +124,17 @@ export class RequirementsService {
         }
       }
     });
+
+    // Validate bidding data if posting type is bidding
+    if (createRequirementDto.postingType === PostingType.REVERSE_BIDDING || 
+        createRequirementDto.postingType === PostingType.STANDARD_BIDDING) {
+      
+      // Validate bidding data
+      if (!createRequirementDto.biddingStartDate || !createRequirementDto.biddingStartTime ||
+          !createRequirementDto.biddingEndDate || !createRequirementDto.biddingEndTime) {
+        throw new BadRequestException('Bidding start and end dates/times are required for bidding requirements');
+      }
+    }
 
     return this.mapToResponseDto(requirement);
   }
@@ -523,6 +543,15 @@ export class RequirementsService {
       visibleCity: requirement.visibleCity,
       quotesCount: requirement.quotesCount,
       deadline: requirement.deadline,
+      // Bidding-specific fields
+      biddingStartDate: requirement.biddingStartDate,
+      biddingStartTime: requirement.biddingStartTime,
+      biddingEndDate: requirement.biddingEndDate,
+      biddingEndTime: requirement.biddingEndTime,
+      minimumBidDecrement: requirement.minimumBidDecrement,
+      enableH1H2Split: requirement.enableH1H2Split,
+      h1H2SplitRatio: requirement.h1H2SplitRatio,
+      reservePrice: requirement.reservePrice,
       postedAt: requirement.postedAt,
       createdAt: requirement.createdAt,
       updatedAt: requirement.updatedAt,
@@ -775,9 +804,14 @@ export class RequirementsService {
       whereClause.userType = userType;
     }
     
-    // Add posting type filter
+    // Add posting type filter - support multiple types separated by comma
     if (postingType) {
-      whereClause.postingType = postingType;
+      const postingTypes = postingType.split(',').map(type => type.trim());
+      if (postingTypes.length === 1) {
+        whereClause.postingType = postingTypes[0];
+      } else {
+        whereClause.postingType = { in: postingTypes };
+      }
     }
     
     // Add negotiable type filter
