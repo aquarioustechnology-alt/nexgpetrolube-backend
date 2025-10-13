@@ -12,18 +12,12 @@ export class DashboardService {
       pendingKyc,
       activeUsers,
       inactiveUsers,
-      totalListings,
-      pendingListings,
-      approvedListings,
-      rejectedListings,
       totalRequirements,
       pendingRequirements,
       activeRequirements,
       completedRequirements,
-      totalAuctions,
-      activeAuctions,
-      upcomingAuctions,
-      completedAuctions,
+      standardBiddingRequirements,
+      reverseBiddingRequirements,
       approvedKyc,
       rejectedKyc,
       totalKyc,
@@ -31,9 +25,7 @@ export class DashboardService {
       thisMonthRevenue,
       lastMonthRevenue,
       recentNewUsers,
-      recentNewListings,
       recentNewRequirements,
-      recentCompletedAuctions,
     ] = await Promise.all([
       // User stats
       this.prisma.user.count(),
@@ -41,23 +33,13 @@ export class DashboardService {
       this.prisma.user.count({ where: { isActive: true } }),
       this.prisma.user.count({ where: { isActive: false } }),
 
-      // Listing stats
-      this.prisma.listing.count(),
-      this.prisma.listing.count({ where: { status: 'PENDING' } }),
-      this.prisma.listing.count({ where: { status: 'APPROVED' } }),
-      this.prisma.listing.count({ where: { status: 'REJECTED' } }),
-
       // Requirement stats
       this.prisma.requirement.count(),
       this.prisma.requirement.count({ where: { status: 'OPEN' } }),
       this.prisma.requirement.count({ where: { status: 'QUOTED' } }),
       this.prisma.requirement.count({ where: { status: 'CLOSED' } }),
-
-      // Auction stats
-      this.prisma.auction.count(),
-      this.prisma.auction.count({ where: { status: 'LIVE' } }),
-      this.prisma.auction.count({ where: { status: 'SCHEDULED' } }),
-      this.prisma.auction.count({ where: { status: 'ENDED' } }),
+      this.prisma.requirement.count({ where: { postingType: 'STANDARD_BIDDING' } }),
+      this.prisma.requirement.count({ where: { postingType: 'REVERSE_BIDDING' } }),
 
       // KYC stats
       this.prisma.user.count({ where: { kycStatus: 'APPROVED' } }),
@@ -98,24 +80,9 @@ export class DashboardService {
           },
         },
       }),
-      this.prisma.listing.count({
-        where: {
-          createdAt: {
-            gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-          },
-        },
-      }),
       this.prisma.requirement.count({
         where: {
           createdAt: {
-            gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-          },
-        },
-      }),
-      this.prisma.auction.count({
-        where: {
-          status: 'ENDED',
-          endTime: {
             gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
           },
         },
@@ -136,23 +103,13 @@ export class DashboardService {
         active: activeUsers,
         inactive: inactiveUsers,
       },
-      listings: {
-        total: totalListings,
-        pending: pendingListings,
-        approved: approvedListings,
-        rejected: rejectedListings,
-      },
       requirements: {
         total: totalRequirements,
         pending: pendingRequirements,
         active: activeRequirements,
         completed: completedRequirements,
-      },
-      auctions: {
-        total: totalAuctions,
-        active: activeAuctions,
-        upcoming: upcomingAuctions,
-        completed: completedAuctions,
+        standardBidding: standardBiddingRequirements,
+        reverseBidding: reverseBiddingRequirements,
       },
       revenue: {
         total: Number(totalRevenue._sum.amount || 0),
@@ -168,9 +125,7 @@ export class DashboardService {
       },
       recentActivity: {
         newUsers: recentNewUsers,
-        newListings: recentNewListings,
         newRequirements: recentNewRequirements,
-        completedAuctions: recentCompletedAuctions,
       },
       timestamp: new Date(),
     };

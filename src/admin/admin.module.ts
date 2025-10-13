@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { AdminCommonModule } from './common/common.module';
 import { UsersModule } from './users/users.module';
 import { KycModule } from './kyc/kyc.module';
-import { ListingsModule } from './listings/listings.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { AuditModule } from './audit/audit.module';
 import { AdminCategoriesModule } from './categories/categories.module';
@@ -18,7 +17,6 @@ import { UploadsModule } from './uploads/uploads.module';
     AdminCommonModule,
     UsersModule,
     KycModule,
-    ListingsModule,
     DashboardModule,
     AuditModule,
     AdminCategoriesModule,

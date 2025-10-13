@@ -107,6 +107,61 @@ export class RequirementsController {
     });
   }
 
+  @Get('public-bids')
+  @ApiOperation({ summary: 'Get public bids listing with search and filters (identical to public endpoint)' })
+  @ApiResponse({ status: 200, description: 'Public bids retrieved successfully', type: PublicListingResponseDto })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number (default: 1)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (default: 10, max: 100)' })
+  @ApiQuery({ name: 'search', required: false, type: String, description: 'Search query for title, description, or product name' })
+  @ApiQuery({ name: 'userType', required: false, enum: ['SELLER', 'BUYER'], description: 'Filter by user type' })
+  @ApiQuery({ name: 'postingType', required: false, enum: ['REQUIREMENT', 'REVERSE_BIDDING', 'STANDARD_BIDDING'], description: 'Filter by posting type (comma-separated for multiple types)' })
+  @ApiQuery({ name: 'negotiableType', required: false, enum: ['negotiable', 'non_negotiable'], description: 'Filter by negotiable type' })
+  @ApiQuery({ name: 'category', required: false, type: String, description: 'Filter by category name' })
+  @ApiQuery({ name: 'sortBy', required: false, enum: ['createdAt', 'updatedAt', 'title', 'unitPrice'], description: 'Sort field (default: createdAt)' })
+  @ApiQuery({ name: 'sortOrder', required: false, enum: ['asc', 'desc'], description: 'Sort order (default: desc)' })
+  @ApiQuery({ name: 'minPrice', required: false, type: Number, description: 'Minimum unit price filter' })
+  @ApiQuery({ name: 'maxPrice', required: false, type: Number, description: 'Maximum unit price filter' })
+  @ApiQuery({ name: 'state', required: false, type: String, description: 'Filter by state' })
+  @ApiQuery({ name: 'city', required: false, type: String, description: 'Filter by city' })
+  getPublicBids(
+    @Query('page') pageParam?: string,
+    @Query('limit') limitParam?: string,
+    @Query('search') search?: string,
+    @Query('userType') userType?: string,
+    @Query('postingType') postingType?: string,
+    @Query('negotiableType') negotiableType?: string,
+    @Query('category') category?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: string,
+    @Query('minPrice') minPriceParam?: string,
+    @Query('maxPrice') maxPriceParam?: string,
+    @Query('state') state?: string,
+    @Query('city') city?: string
+  ) {
+    const page = pageParam ? parseInt(pageParam, 10) : 1;
+    const limit = Math.min(limitParam ? parseInt(limitParam, 10) : 10, 100); // Max 100 items per page
+    const sortField = sortBy || 'createdAt';
+    const sortDirection = sortOrder || 'desc';
+    const minPrice = minPriceParam ? parseFloat(minPriceParam) : undefined;
+    const maxPrice = maxPriceParam ? parseFloat(maxPriceParam) : undefined;
+    
+    return this.requirementsService.getPublicBids({
+      page,
+      limit,
+      search,
+      userType,
+      postingType,
+      negotiableType,
+      category,
+      sortBy: sortField,
+      sortOrder: sortDirection,
+      minPrice,
+      maxPrice,
+      state,
+      city
+    });
+  }
+
   @Get('my-requirements')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

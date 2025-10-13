@@ -9,28 +9,14 @@ export class DashboardStatsDto {
     inactive: number;
   };
 
-  @ApiProperty({ description: 'Listing statistics' })
-  listings: {
-    total: number;
-    pending: number;
-    approved: number;
-    rejected: number;
-  };
-
   @ApiProperty({ description: 'Requirement statistics' })
   requirements: {
     total: number;
     pending: number;
     active: number;
     completed: number;
-  };
-
-  @ApiProperty({ description: 'Auction statistics' })
-  auctions: {
-    total: number;
-    active: number;
-    upcoming: number;
-    completed: number;
+    standardBidding: number;
+    reverseBidding: number;
   };
 
   @ApiProperty({ description: 'Revenue statistics' })
@@ -52,9 +38,7 @@ export class DashboardStatsDto {
   @ApiProperty({ description: 'Recent activity' })
   recentActivity: {
     newUsers: number;
-    newListings: number;
     newRequirements: number;
-    completedAuctions: number;
   };
 
   @ApiProperty({ description: 'Timestamp of the data' })

@@ -4,7 +4,7 @@ import { CreateRequirementDto } from './dto/create-requirement.dto';
 import { UpdateRequirementDto } from './dto/update-requirement.dto';
 import { RequirementResponseDto } from './dto/requirement-response.dto';
 import { PostingType, RequirementStatus } from './dto/create-requirement.dto';
-import { RequirementStatus as PrismaRequirementStatus, AuctionType, AuctionStatus } from '@prisma/client';
+import { RequirementStatus as PrismaRequirementStatus } from '@prisma/client';
 
 @Injectable()
 export class RequirementsService {
@@ -972,6 +972,17 @@ export class RequirementsService {
                 email: true,
                 role: true
               }
+            },
+            bids: {
+              where: {
+                bidStatus: 'ACTIVE'
+              },
+              select: {
+                offeredUnitPrice: true
+              },
+              orderBy: {
+                offeredUnitPrice: 'desc'
+              }
             }
           }
         }),
@@ -981,6 +992,258 @@ export class RequirementsService {
     
     return {
       requirements: requirements.map(req => this.mapToResponseDto(req)),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+        hasNextPage: page < Math.ceil(total / limit),
+        hasPrevPage: page > 1
+      },
+      filters: {
+        search: search || null,
+        userType: userType || null,
+        postingType: postingType || null,
+        status: 'OPEN', // Always OPEN for public API
+        category: category || null,
+        sortBy: sortBy || 'createdAt',
+        sortOrder: sortOrder || 'desc'
+      }
+    };
+  }
+
+  async getPublicBids(params: {
+    page: number;
+    limit: number;
+    search?: string;
+    userType?: string;
+    postingType?: string;
+    negotiableType?: string;
+    category?: string;
+    sortBy?: string;
+    sortOrder?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    state?: string;
+    city?: string;
+  }) {
+    const { page, limit, search, userType, postingType, negotiableType, category, sortBy, sortOrder, minPrice, maxPrice, state, city } = params;
+    const skip = (page - 1) * limit;
+    
+    // Build where clause for public listing
+    let whereClause: any = {
+      // Only show approved and open requirements publicly
+      adminStatus: 'APPROVED',
+      status: 'OPEN' // Always show only open requirements
+    };
+    
+    // Add user type filter
+    if (userType) {
+      whereClause.userType = userType;
+    }
+    
+    // Add posting type filter - support multiple types separated by comma
+    if (postingType) {
+      const postingTypes = postingType.split(',').map(type => type.trim());
+      if (postingTypes.length === 1) {
+        whereClause.postingType = postingTypes[0];
+      } else {
+        whereClause.postingType = { in: postingTypes };
+      }
+    }
+    
+    // Add negotiable type filter
+    if (negotiableType) {
+      whereClause.negotiableType = negotiableType;
+    }
+    
+    // Add category filter
+    if (category) {
+      whereClause.category = {
+        name: { contains: category, mode: 'insensitive' }
+      };
+    }
+    
+    // Add price range filter - ensure unitPrice is not null
+    if (minPrice !== undefined || maxPrice !== undefined) {
+      whereClause.unitPrice = {
+        not: null
+      };
+    }
+    
+    // Add location filters
+    if (state) {
+      whereClause.state = {
+        contains: state,
+        mode: 'insensitive'
+      };
+    }
+    
+    if (city) {
+      whereClause.city = {
+        contains: city,
+        mode: 'insensitive'
+      };
+    }
+    
+    // Add search filter
+    if (search) {
+      whereClause.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+        { shortDescription: { contains: search, mode: 'insensitive' } },
+        { productName: { contains: search, mode: 'insensitive' } },
+        { brandName: { contains: search, mode: 'insensitive' } },
+        { category: { name: { contains: search, mode: 'insensitive' } } },
+        { subcategory: { name: { contains: search, mode: 'insensitive' } } }
+      ];
+    }
+    
+    // Build order by clause
+    let orderBy: any = {};
+    if (sortBy && sortOrder) {
+      orderBy[sortBy] = sortOrder;
+    } else {
+      orderBy = { createdAt: 'desc' }; // Default sort
+    }
+    
+    // Handle price filtering separately since unitPrice is stored as string
+    let requirements, total;
+    
+    if (minPrice !== undefined || maxPrice !== undefined) {
+      // For price filtering, we need to fetch more data and filter in application layer
+      const allRequirements = await this.prisma.requirement.findMany({
+        where: whereClause,
+        orderBy,
+        include: {
+          category: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          subcategory: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          product: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          brand: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              companyName: true,
+              email: true,
+              role: true
+            }
+          }
+        }
+      });
+      
+      // Filter by price range in application layer
+      const filteredRequirements = allRequirements.filter(req => {
+        if (!req.unitPrice) return false;
+        const price = parseFloat(req.unitPrice);
+        if (isNaN(price)) return false;
+        
+        if (minPrice !== undefined && price < minPrice) return false;
+        if (maxPrice !== undefined && price > maxPrice) return false;
+        
+        return true;
+      });
+      
+      // Apply pagination to filtered results
+      total = filteredRequirements.length;
+      requirements = filteredRequirements.slice(skip, skip + limit);
+    } else {
+      // Normal query without price filtering
+      [requirements, total] = await Promise.all([
+        this.prisma.requirement.findMany({
+          where: whereClause,
+          skip,
+          take: limit,
+          orderBy,
+          include: {
+            category: {
+              select: {
+                id: true,
+                name: true
+              }
+            },
+            subcategory: {
+              select: {
+                id: true,
+                name: true
+              }
+            },
+            product: {
+              select: {
+                id: true,
+                name: true
+              }
+            },
+            brand: {
+              select: {
+                id: true,
+                name: true
+              }
+            },
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                companyName: true,
+                email: true,
+                role: true
+              }
+            },
+            bids: {
+              where: {
+                bidStatus: 'ACTIVE'
+              },
+              select: {
+                offeredUnitPrice: true
+              },
+              orderBy: {
+                offeredUnitPrice: 'desc'
+              }
+            }
+          }
+        }),
+        this.prisma.requirement.count({ where: whereClause })
+      ]);
+    }
+    
+    return {
+      requirements: requirements.map(req => {
+        const mappedReq = this.mapToResponseDto(req);
+        
+        // Calculate highest and lowest bid amounts
+        const bidAmounts = req.bids?.map(bid => parseFloat(bid.offeredUnitPrice.toString())) || [];
+        const highestBidAmount = bidAmounts.length > 0 ? Math.max(...bidAmounts) : null;
+        const lowestBidAmount = bidAmounts.length > 0 ? Math.min(...bidAmounts) : null;
+        
+        return {
+          ...mappedReq,
+          highestBidAmount,
+          lowestBidAmount,
+          bidCount: bidAmounts.length
+        };
+      }),
       pagination: {
         page,
         limit,

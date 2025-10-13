@@ -6,26 +6,22 @@ export class ProductsService {
   constructor(private prisma: PrismaService) {}
 
   async findAll() {
-    return this.prisma.listing.findMany({
+    return this.prisma.product.findMany({
       include: {
-        user: true,
         category: true,
         subcategory: true,
         brand: true,
-        unit: true,
       },
     });
   }
 
   async findOne(id: string) {
-    return this.prisma.listing.findUnique({
+    return this.prisma.product.findUnique({
       where: { id },
       include: {
-        user: true,
         category: true,
         subcategory: true,
         brand: true,
-        unit: true,
       },
     });
   }

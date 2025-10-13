@@ -50,16 +50,22 @@ export class CategoryResponseDto {
   updatedAt: Date;
 
   @ApiPropertyOptional({
-    description: 'Number of subcategories',
+    description: 'Number of child categories',
     example: 5,
   })
-  subcategoriesCount?: number;
+  childrenCount?: number;
 
   @ApiPropertyOptional({
     description: 'Number of products in this category',
     example: 25,
   })
   productsCount?: number;
+
+  @ApiPropertyOptional({
+    description: 'Number of requirements in this category',
+    example: 10,
+  })
+  requirementsCount?: number;
 
   @ApiPropertyOptional({
     description: 'Parent category details',

@@ -85,10 +85,6 @@ export class UsersService {
           },
         },
         bankDetails: true,
-        listings: {
-          take: 5,
-          orderBy: { createdAt: 'desc' },
-        },
         requirements: {
           take: 5,
           orderBy: { createdAt: 'desc' },
@@ -114,10 +110,6 @@ export class UsersService {
           },
         },
         bankDetails: true,
-        listings: {
-          take: 5,
-          orderBy: { createdAt: 'desc' },
-        },
         requirements: {
           take: 5,
           orderBy: { createdAt: 'desc' },

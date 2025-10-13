@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  log      = ["error", "warn"]
 }
 
 datasource db {
@@ -25,11 +26,10 @@ model User {
   updatedAt       DateTime       @updatedAt
   addresses       Address[]
   bankDetails     BankDetail?
-  bids            Bid[]
+  requirementOwnerBids Bid[]           @relation("RequirementOwnerBids")
+  userBids            Bid[]           @relation("UserBids")
   kyc             Kyc?
-  listings        Listing[]
   notifications   Notification[]
-  quotes          Quote[]
   requirements    Requirement[]
   wishlist        WishlistItem[]
   offers          Offer[]           @relation("UserOffers")
@@ -135,30 +135,14 @@ model Category {
   updatedAt     DateTime      @updatedAt
   parent        Category?     @relation("CategoryHierarchy", fields: [parentId], references: [id])
   children      Category[]    @relation("CategoryHierarchy")
-  listings      Listing[]
   products      Product[]
   requirements  Requirement[] @relation("RequirementCategory")
-  subcategories Subcategory[]
   productSubcategories Product[] @relation("ProductSubcategory")
   requirementSubcategories Requirement[] @relation("RequirementSubcategory")
 
   @@map("categories")
 }
 
-model Subcategory {
-  id           String        @id @default(cuid())
-  name         String
-  description  String?
-  categoryId   String
-  isActive     Boolean       @default(true)
-  sortOrder    Int           @default(0)
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  listings     Listing[]
-  category     Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-
-  @@map("subcategories")
-}
 
 model Brand {
   id          String        @id @default(cuid())
@@ -168,7 +152,6 @@ model Brand {
   isActive    Boolean       @default(true)
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
-  listings    Listing[]
   products    Product[]
   requirements Requirement[]
 
@@ -183,7 +166,6 @@ model Unit {
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-  listings     Listing[]
 
   @@map("units")
 }
@@ -209,40 +191,6 @@ model Product {
   @@map("products")
 }
 
-model Listing {
-  id              String         @id @default(cuid())
-  userId          String
-  title           String
-  description     String
-  categoryId      String
-  subcategoryId   String?
-  brandId         String?
-  unitId          String
-  listingType     ListingType
-  basePrice       Decimal
-  moq             String
-  quantity        Decimal?
-  specifications  Json?
-  images          String[]
-  status          ListingStatus  @default(PENDING)
-  isActive        Boolean        @default(true)
-  views           Int            @default(0)
-  submittedAt     DateTime       @default(now())
-  approvedAt      DateTime?
-  approvedBy      String?
-  rejectionReason String?
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  auctions        Auction[]
-  brand           Brand?         @relation(fields: [brandId], references: [id])
-  category        Category       @relation(fields: [categoryId], references: [id])
-  subcategory     Subcategory?   @relation(fields: [subcategoryId], references: [id])
-  unit            Unit           @relation(fields: [unitId], references: [id])
-  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  wishlist        WishlistItem[]
-
-  @@map("listings")
-}
 
 model Requirement {
   id               String             @id @default(cuid())
@@ -291,6 +239,10 @@ model Requirement {
   enableH1H2Split  Boolean            @default(false)
   h1H2SplitRatio  String?
   reservePrice     String?
+  // Add bidding status fields
+  biddingStatus    RequirementStatus? // LIVE, ENDED, PAUSED for bidding
+  currentBid       Decimal?            // Current highest bid
+  biddersCount     Int                @default(0) // Number of bidders
   // Admin approval fields
   adminStatus      RequirementStatus? @default(PENDING)
   approvedBy       String?
@@ -300,10 +252,10 @@ model Requirement {
   rejectionReason  String?
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
-  auctions         Auction[]
-  quotes           Quote[]
+  bids             Bid[]              @relation("RequirementBids")
   offers           Offer[]            @relation("RequirementOffers")
   counterOffers    CounterOffer[]     @relation("RequirementCounterOffers")
+  wishlist         WishlistItem[]
   category         Category           @relation("RequirementCategory", fields: [categoryId], references: [id])
   subcategory      Category?          @relation("RequirementSubcategory", fields: [subcategoryId], references: [id])
   product          Product?           @relation(fields: [productId], references: [id])
@@ -313,69 +265,57 @@ model Requirement {
   @@map("requirements")
 }
 
-model Auction {
-  id                  String        @id @default(cuid())
-  type                AuctionType
-  title               String
-  description         String
-  listingId           String?
-  requirementId       String?
-  totalQuantity       Decimal
-  filledQuantity      Decimal       @default(0)
-  startPrice          Decimal?
-  reservePrice        Decimal?
-  currentBid          Decimal?
-  minimumBidIncrement Decimal?
-  startTime           DateTime
-  endTime             DateTime
-  status              AuctionStatus @default(SCHEDULED)
-  biddersCount        Int           @default(0)
-  isH1H2SplitEnabled  Boolean       @default(false)
-  h1H2SplitRatio      Decimal?
-  createdAt           DateTime      @default(now())
-  updatedAt           DateTime      @updatedAt
-  listing             Listing?      @relation(fields: [listingId], references: [id])
-  requirement         Requirement?  @relation(fields: [requirementId], references: [id])
-  bids                Bid[]
-
-  @@map("auctions")
-}
 
 model Bid {
-  id        String    @id @default(cuid())
-  auctionId String
-  userId    String
-  amount    Decimal
-  quantity  Decimal?
-  status    BidStatus @default(ACTIVE)
-  isWinning Boolean   @default(false)
-  placedAt  DateTime  @default(now())
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  auction   Auction   @relation(fields: [auctionId], references: [id], onDelete: Cascade)
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                   String           @id @default(cuid())
+  requirementId        String
+  requirementOwnerType UserRole
+  offeredUnitPrice     Decimal          @db.Decimal(10, 2)
+  offeredQuantity      String
+  requirementOwnerId   String
+  bidUserId            String
+  negotiableType       String
+  postingType          PostingType
+  negotiationWindow    Int?             // Negotiation window in hours
+  deadline             DateTime?
+  bidStatus            BidStatus        @default(ACTIVE)
+  bidMessage           String?          @db.Text
+  parentBidId          String?
+  bidExpiryDate        DateTime?
+  minimumQuantity      String?
+  maximumQuantity      String?
+  deliveryTerms        String?          @db.Text
+  paymentTerms         String?          @db.Text
+  validityPeriod       Int?             // Bid validity period in days
+  isCounterBid         Boolean          @default(false)
+  bidPriority          OfferPriority    @default(MEDIUM)
+  // Counterbid fields
+  counterbidCount      Int              @default(0)
+  originalPrice        Decimal?          @db.Decimal(10, 2)
+  originalQuantity     String?
+  // Payment success fields
+  sellerPaymentStatus  PaymentStatus    @default(PENDING)
+  buyerPaymentStatus   PaymentStatus    @default(PENDING)
+  sellerPaymentId      String?
+  buyerPaymentId       String?
+  sellerPaidAt         DateTime?
+  buyerPaidAt          DateTime?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  deletedAt            DateTime?
+
+  // Relations
+  requirement          Requirement      @relation("RequirementBids", fields: [requirementId], references: [id], onDelete: Cascade)
+  requirementOwner     User             @relation("RequirementOwnerBids", fields: [requirementOwnerId], references: [id], onDelete: Cascade)
+  bidUser              User             @relation("UserBids", fields: [bidUserId], references: [id], onDelete: Cascade)
+  parentBid            Bid?             @relation("CounterBids", fields: [parentBidId], references: [id], onDelete: SetNull)
+  counterBids          Bid[]            @relation("CounterBids")
+  sellerPayment        Payment?         @relation("BidSellerPayment", fields: [sellerPaymentId], references: [id], onDelete: SetNull)
+  buyerPayment         Payment?         @relation("BidBuyerPayment", fields: [buyerPaymentId], references: [id], onDelete: SetNull)
 
   @@map("bids")
 }
 
-model Quote {
-  id            String      @id @default(cuid())
-  requirementId String
-  userId        String
-  amount        Decimal
-  quantity      String
-  description   String?
-  status        QuoteStatus @default(PENDING)
-  validUntil    DateTime?
-  submittedAt   DateTime    @default(now())
-  respondedAt   DateTime?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  requirement   Requirement @relation(fields: [requirementId], references: [id], onDelete: Cascade)
-  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("quotes")
-}
 
 model Notification {
   id        String           @id @default(cuid())
@@ -392,14 +332,14 @@ model Notification {
 }
 
 model WishlistItem {
-  id        String   @id @default(cuid())
-  userId    String
-  listingId String
-  createdAt DateTime @default(now())
-  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id             String       @id @default(cuid())
+  userId         String
+  requirementId  String
+  createdAt      DateTime     @default(now())
+  requirement    Requirement  @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, listingId])
+  @@unique([userId, requirementId])
   @@map("wishlist_items")
 }
 
@@ -520,18 +460,6 @@ enum KycStatus {
   REJECTED
 }
 
-enum ListingType {
-  FIXED
-  NEGOTIATION
-  BIDDING
-}
-
-enum ListingStatus {
-  PENDING
-  APPROVED
-  REJECTED
-  DRAFT
-}
 
 enum RequirementStatus {
   DRAFT
@@ -542,6 +470,9 @@ enum RequirementStatus {
   QUOTED
   CLOSED
   CANCELLED
+  LIVE      // Add this for bidding status
+  ENDED     // Add this for bidding status
+  PAUSED    // Add this for bidding status
 }
 
 enum RequirementUrgency {
@@ -557,18 +488,6 @@ enum PostingType {
   STANDARD_BIDDING
 }
 
-enum AuctionType {
-  REVERSE
-  TRADITIONAL
-}
-
-enum AuctionStatus {
-  SCHEDULED
-  LIVE
-  PAUSED
-  ENDED
-  CANCELLED
-}
 
 enum BidStatus {
   ACTIVE
@@ -578,12 +497,6 @@ enum BidStatus {
   LOST
 }
 
-enum QuoteStatus {
-  PENDING
-  ACCEPTED
-  REJECTED
-  EXPIRED
-}
 
 enum NotificationType {
   BID_UPDATE
@@ -802,6 +715,8 @@ model Payment {
   user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   sellerOffers      Offer[]       @relation("OfferSellerPayment")
   buyerOffers       Offer[]       @relation("OfferBuyerPayment")
+  sellerBids        Bid[]         @relation("BidSellerPayment")
+  buyerBids         Bid[]         @relation("BidBuyerPayment")
 
   @@map("payments")
 }

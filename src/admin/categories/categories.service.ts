@@ -44,11 +44,11 @@ export class AdminCategoriesService {
       include: {
         parent: true,
         children: true,
-        subcategories: true,
         _count: {
           select: {
-            subcategories: true,
-            listings: true,
+            children: true,
+            products: true,
+            requirements: true,
           },
         },
       },
@@ -107,11 +107,11 @@ export class AdminCategoriesService {
         include: {
           parent: true,
           children: true,
-          subcategories: true,
           _count: {
             select: {
-              subcategories: true,
-              listings: true,
+              children: true,
+              products: true,
+              requirements: true,
             },
           },
         },
@@ -136,11 +136,11 @@ export class AdminCategoriesService {
       include: {
         parent: true,
         children: true,
-        subcategories: true,
         _count: {
           select: {
-            subcategories: true,
-            listings: true,
+            children: true,
+            products: true,
+            requirements: true,
           },
         },
       },
@@ -200,11 +200,11 @@ export class AdminCategoriesService {
       include: {
         parent: true,
         children: true,
-        subcategories: true,
         _count: {
           select: {
-            subcategories: true,
-            listings: true,
+            children: true,
+            products: true,
+            requirements: true,
           },
         },
       },
@@ -218,8 +218,8 @@ export class AdminCategoriesService {
       where: { id },
       include: {
         children: true,
-        subcategories: true,
-        listings: true,
+        products: true,
+        requirements: true,
       },
     });
 
@@ -232,14 +232,14 @@ export class AdminCategoriesService {
       throw new ConflictException('Cannot delete category with child categories');
     }
 
-    // Check if category has subcategories
-    if (category.subcategories.length > 0) {
-      throw new ConflictException('Cannot delete category with subcategories');
+    // Check if category has products
+    if (category.products.length > 0) {
+      throw new ConflictException('Cannot delete category with associated products');
     }
 
-    // Check if category has listings
-    if (category.listings.length > 0) {
-      throw new ConflictException('Cannot delete category with associated listings');
+    // Check if category has requirements
+    if (category.requirements.length > 0) {
+      throw new ConflictException('Cannot delete category with associated requirements');
     }
 
     await this.prisma.category.delete({
@@ -262,16 +262,18 @@ export class AdminCategoriesService {
             },
             _count: {
               select: {
-                subcategories: true,
-                listings: true,
+                children: true,
+                products: true,
+                requirements: true,
               },
             },
           },
         },
         _count: {
           select: {
-            subcategories: true,
-            listings: true,
+            children: true,
+            products: true,
+            requirements: true,
           },
         },
       },
@@ -291,8 +293,9 @@ export class AdminCategoriesService {
       sortOrder: category.sortOrder,
       createdAt: category.createdAt,
       updatedAt: category.updatedAt,
-      subcategoriesCount: category._count?.subcategories || 0,
-      productsCount: category._count?.listings || 0,
+      childrenCount: category._count?.children || 0,
+      productsCount: category._count?.products || 0,
+      requirementsCount: category._count?.requirements || 0,
       parent: category.parent ? this.mapToResponseDto(category.parent) : undefined,
       children: category.children?.map((child: any) => this.mapToResponseDto(child)) || [],
     };

@@ -7,9 +7,7 @@ import { UsersModule } from './users/users.module';
 import { KycModule } from './kyc/kyc.module';
 import { ProductsModule } from './products/products.module';
 import { RequirementsModule } from './requirements/requirements.module';
-import { AuctionsModule } from './auctions/auctions.module';
 import { BidsModule } from './bids/bids.module';
-import { QuotesModule } from './quotes/quotes.module';
 import { CategoriesModule } from './categories/categories.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { AdminModule } from './admin/admin.module';
@@ -49,9 +47,7 @@ import { AppConfigModule } from './config/app.config';
     KycModule,
     ProductsModule,
     RequirementsModule,
-    AuctionsModule,
     BidsModule,
-    QuotesModule,
     CategoriesModule,
     NotificationsModule,
     OffersModule,

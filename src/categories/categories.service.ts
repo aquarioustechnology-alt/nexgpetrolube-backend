@@ -8,7 +8,6 @@ export class CategoriesService {
   async findAll() {
     return this.prisma.category.findMany({
       include: {
-        subcategories: true,
         children: true,
         parent: true,
       },

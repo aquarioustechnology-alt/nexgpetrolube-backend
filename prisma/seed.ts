@@ -34,22 +34,22 @@ async function main() {
     },
   });
 
-  // Create subcategories
-  const syntheticSubcategory = await prisma.subcategory.create({
+  // Create subcategories as child categories
+  const syntheticSubcategory = await prisma.category.create({
     data: {
       name: 'Synthetic',
       description: 'Synthetic engine oils',
-      categoryId: engineOilCategory.id,
+      parentId: engineOilCategory.id,
       isActive: true,
       sortOrder: 1,
     },
   });
 
-  const mineralSubcategory = await prisma.subcategory.create({
+  const mineralSubcategory = await prisma.category.create({
     data: {
       name: 'Mineral',
       description: 'Mineral engine oils',
-      categoryId: engineOilCategory.id,
+      parentId: engineOilCategory.id,
       isActive: true,
       sortOrder: 2,
     },
@@ -233,48 +233,6 @@ async function main() {
         yearsInBusiness: 3,
         kycStatus: 'PENDING',
         submittedAt: new Date(),
-      },
-    ],
-  });
-
-  // Create sample listings
-  await prisma.listing.createMany({
-    data: [
-      {
-        userId: sellerUser.id,
-        title: 'Castrol GTX 15W-40 Engine Oil',
-        description: 'High-quality synthetic blend engine oil for commercial vehicles',
-        categoryId: engineOilCategory.id,
-        subcategoryId: syntheticSubcategory.id,
-        brandId: castrolBrand.id,
-        unitId: literUnit.id,
-        listingType: 'FIXED',
-        basePrice: 450.00,
-        moq: '200L',
-        quantity: 1000,
-        status: 'APPROVED',
-        isActive: true,
-        submittedAt: new Date(),
-        approvedAt: new Date(),
-        approvedBy: adminUser.id,
-      },
-      {
-        userId: sellerUser.id,
-        title: 'Mobil 1 5W-30 Fully Synthetic Oil',
-        description: 'Premium fully synthetic engine oil for passenger cars',
-        categoryId: engineOilCategory.id,
-        subcategoryId: syntheticSubcategory.id,
-        brandId: mobilBrand.id,
-        unitId: literUnit.id,
-        listingType: 'NEGOTIATION',
-        basePrice: 650.00,
-        moq: '100L',
-        quantity: 500,
-        status: 'APPROVED',
-        isActive: true,
-        submittedAt: new Date(),
-        approvedAt: new Date(),
-        approvedBy: adminUser.id,
       },
     ],
   });
