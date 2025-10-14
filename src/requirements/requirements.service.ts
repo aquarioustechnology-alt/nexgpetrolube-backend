@@ -679,6 +679,17 @@ export class RequirementsService {
             orderBy: {
               createdAt: 'desc'
             }
+          },
+          bids: {
+            where: {
+              bidStatus: 'ACTIVE'
+            },
+            select: {
+              offeredUnitPrice: true
+            },
+            orderBy: {
+              offeredUnitPrice: 'desc'
+            }
           }
         }
       }),
@@ -686,7 +697,25 @@ export class RequirementsService {
     ]);
 
     return {
-      requirements: requirements.map(req => this.mapToResponseDto(req)),
+      requirements: requirements.map(req => {
+        const mappedReq = this.mapToResponseDto(req);
+        
+        // Calculate bid counts and amounts
+        const bidAmounts = req.bids?.map(bid => parseFloat(bid.offeredUnitPrice.toString())) || [];
+        const highestBidAmount = bidAmounts.length > 0 ? Math.max(...bidAmounts) : null;
+        const lowestBidAmount = bidAmounts.length > 0 ? Math.min(...bidAmounts) : null;
+        
+        // Calculate offer count
+        const offerCount = req.offers?.length || 0;
+        
+        return {
+          ...mappedReq,
+          bidCount: bidAmounts.length,
+          offerCount: offerCount,
+          highestBidAmount,
+          lowestBidAmount
+        };
+      }),
       pagination: {
         page,
         limit,

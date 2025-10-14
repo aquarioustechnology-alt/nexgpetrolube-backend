@@ -214,6 +214,74 @@ export class BidsService {
     return lowestBid ? this.mapToResponseDto(lowestBid) : null;
   }
 
+  async getMyBids(userId: string, options: { page: number; limit: number; sortBy: string; sortOrder: 'asc' | 'desc'; postingType?: string }) {
+    const { page, limit, sortBy, sortOrder, postingType } = options;
+    const skip = (page - 1) * limit;
+
+    // Build where clause
+    const whereClause: any = {
+      bidUserId: userId,
+    };
+
+    // Add postingType filter if provided
+    if (postingType) {
+      whereClause.requirement = {
+        postingType: postingType,
+      };
+    }
+
+    const [bids, total] = await Promise.all([
+      this.prisma.bid.findMany({
+        where: whereClause,
+        include: {
+          bidUser: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              companyName: true,
+            }
+          },
+          requirement: {
+            select: {
+              id: true,
+              title: true,
+              postingType: true,
+              productName: true,
+              units: true,
+              user: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  companyName: true,
+                }
+              }
+            }
+          }
+        },
+        orderBy: { [sortBy]: sortOrder },
+        skip,
+        take: limit,
+      }),
+      this.prisma.bid.count({
+        where: whereClause,
+      }),
+    ]);
+
+    return {
+      data: bids.map(bid => this.mapToResponseDto(bid)),
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+        hasNextPage: page < Math.ceil(total / limit),
+        hasPreviousPage: page > 1,
+      },
+    };
+  }
+
   private mapToResponseDto(bid: any): BidResponseDto {
     return {
       id: bid.id,

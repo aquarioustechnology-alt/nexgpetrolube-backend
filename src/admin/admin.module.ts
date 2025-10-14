@@ -10,6 +10,7 @@ import { AdminProductsModule } from './products/products.module';
 import { AdminCountsModule } from './counts/counts.module';
 import { AdminRequirementsModule } from './requirements/requirements.module';
 import { AdminRequirementOffersModule } from './requirement-offers/requirement-offers.module';
+import { AdminBidsModule } from './bids/bids.module';
 import { UploadsModule } from './uploads/uploads.module';
 
 @Module({
@@ -25,6 +26,7 @@ import { UploadsModule } from './uploads/uploads.module';
     AdminCountsModule,
     AdminRequirementsModule,
     AdminRequirementOffersModule,
+    AdminBidsModule,
     UploadsModule,
   ],
 })

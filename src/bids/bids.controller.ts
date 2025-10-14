@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Request, UseGuards, BadRequestException, Param } from '@nestjs/common';
+import { Controller, Post, Get, Body, Request, UseGuards, BadRequestException, Param, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { BidsService } from './bids.service';
@@ -45,5 +45,19 @@ export class BidsController {
   @ApiResponse({ status: 200, description: 'Lowest bid retrieved successfully', type: BidResponseDto })
   async getLowestBid(@Param('requirementId') requirementId: string) {
     return this.bidsService.getLowestBid(requirementId);
+  }
+
+  @Get('user/my-bids')
+  @ApiOperation({ summary: 'Get current user bids' })
+  @ApiResponse({ status: 200, description: 'User bids retrieved successfully', type: [BidResponseDto] })
+  async getMyBids(
+    @Request() req,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+    @Query('sortBy') sortBy: string = 'createdAt',
+    @Query('sortOrder') sortOrder: 'asc' | 'desc' = 'desc',
+    @Query('postingType') postingType?: string
+  ) {
+    return this.bidsService.getMyBids(req.user.sub, { page, limit, sortBy, sortOrder, postingType });
   }
 }
