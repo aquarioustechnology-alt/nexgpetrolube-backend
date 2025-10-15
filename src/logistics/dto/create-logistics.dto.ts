@@ -2,10 +2,15 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsDateString, IsNotEmpty, Matches, IsOptional, IsBoolean } from 'class-validator';
 
 export class CreateLogisticsDto {
-  @ApiProperty({ description: 'Offer ID' })
+  @ApiProperty({ description: 'Offer ID', required: false })
   @IsString()
-  @IsNotEmpty()
-  offerId: string;
+  @IsOptional()
+  offerId?: string;
+
+  @ApiProperty({ description: 'Bid ID', required: false })
+  @IsString()
+  @IsOptional()
+  bidId?: string;
 
   @ApiProperty({ description: 'Driver Phone Number' })
   @IsString()

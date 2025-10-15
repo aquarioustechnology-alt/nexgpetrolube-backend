@@ -681,11 +681,9 @@ export class RequirementsService {
             }
           },
           bids: {
-            where: {
-              bidStatus: 'ACTIVE'
-            },
             select: {
-              offeredUnitPrice: true
+              offeredUnitPrice: true,
+              bidStatus: true
             },
             orderBy: {
               offeredUnitPrice: 'desc'
@@ -702,6 +700,10 @@ export class RequirementsService {
         
         // Calculate bid counts and amounts
         const bidAmounts = req.bids?.map(bid => parseFloat(bid.offeredUnitPrice.toString())) || [];
+        const activeBids = req.bids?.filter(bid => bid.bidStatus === 'ACTIVE') || [];
+        const wonBids = req.bids?.filter(bid => bid.bidStatus === 'WON') || [];
+        const lostBids = req.bids?.filter(bid => bid.bidStatus === 'LOST') || [];
+        const outbidBids = req.bids?.filter(bid => bid.bidStatus === 'OUTBID') || [];
         const highestBidAmount = bidAmounts.length > 0 ? Math.max(...bidAmounts) : null;
         const lowestBidAmount = bidAmounts.length > 0 ? Math.min(...bidAmounts) : null;
         
@@ -710,7 +712,11 @@ export class RequirementsService {
         
         return {
           ...mappedReq,
-          bidCount: bidAmounts.length,
+          bidCount: bidAmounts.length, // Total bids (all statuses)
+          activeBidCount: activeBids.length,
+          wonBidCount: wonBids.length,
+          lostBidCount: lostBids.length,
+          outbidBidCount: outbidBids.length,
           offerCount: offerCount,
           highestBidAmount,
           lowestBidAmount
@@ -1003,11 +1009,9 @@ export class RequirementsService {
               }
             },
             bids: {
-              where: {
-                bidStatus: 'ACTIVE'
-              },
               select: {
-                offeredUnitPrice: true
+                offeredUnitPrice: true,
+                bidStatus: true
               },
               orderBy: {
                 offeredUnitPrice: 'desc'
@@ -1241,11 +1245,9 @@ export class RequirementsService {
               }
             },
             bids: {
-              where: {
-                bidStatus: 'ACTIVE'
-              },
               select: {
-                offeredUnitPrice: true
+                offeredUnitPrice: true,
+                bidStatus: true
               },
               orderBy: {
                 offeredUnitPrice: 'desc'
@@ -1263,6 +1265,10 @@ export class RequirementsService {
         
         // Calculate highest and lowest bid amounts
         const bidAmounts = req.bids?.map(bid => parseFloat(bid.offeredUnitPrice.toString())) || [];
+        const activeBids = req.bids?.filter(bid => bid.bidStatus === 'ACTIVE') || [];
+        const wonBids = req.bids?.filter(bid => bid.bidStatus === 'WON') || [];
+        const lostBids = req.bids?.filter(bid => bid.bidStatus === 'LOST') || [];
+        const outbidBids = req.bids?.filter(bid => bid.bidStatus === 'OUTBID') || [];
         const highestBidAmount = bidAmounts.length > 0 ? Math.max(...bidAmounts) : null;
         const lowestBidAmount = bidAmounts.length > 0 ? Math.min(...bidAmounts) : null;
         
@@ -1270,7 +1276,11 @@ export class RequirementsService {
           ...mappedReq,
           highestBidAmount,
           lowestBidAmount,
-          bidCount: bidAmounts.length
+          bidCount: bidAmounts.length, // Total bids (all statuses)
+          activeBidCount: activeBids.length,
+          wonBidCount: wonBids.length,
+          lostBidCount: lostBids.length,
+          outbidBidCount: outbidBids.length
         };
       }),
       pagination: {

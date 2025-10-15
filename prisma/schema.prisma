@@ -300,6 +300,9 @@ model Bid {
   buyerPaymentId       String?
   sellerPaidAt         DateTime?
   buyerPaidAt          DateTime?
+  // Allocation fields for multi-supplier scenarios
+  allocatedQuantity    Int?             // Allocated quantity based on percentage
+  allocatedPercentage  Decimal?         @db.Decimal(5, 2) // Allocation percentage (0-100)
   createdAt            DateTime         @default(now())
   updatedAt            DateTime         @updatedAt
   deletedAt            DateTime?
@@ -312,6 +315,8 @@ model Bid {
   counterBids          Bid[]            @relation("CounterBids")
   sellerPayment        Payment?         @relation("BidSellerPayment", fields: [sellerPaymentId], references: [id], onDelete: SetNull)
   buyerPayment         Payment?         @relation("BidBuyerPayment", fields: [buyerPaymentId], references: [id], onDelete: SetNull)
+  payments             Payment[]        @relation("BidPayments")
+  logistics            Logistics[]      @relation("BidLogistics")
 
   @@map("bids")
 }
@@ -696,6 +701,7 @@ enum AdminRole {
 model Payment {
   id                String        @id @default(cuid())
   offerId           String?       // Optional - can be used for other payment types
+  bidId             String?       // Optional - for bid-related payments
   userId            String        // User making the payment
   paymentType       PaymentType
   amount            Decimal       @db.Decimal(10, 2)
@@ -713,6 +719,7 @@ model Payment {
 
   // Relations
   user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bid               Bid?          @relation("BidPayments", fields: [bidId], references: [id], onDelete: SetNull)
   sellerOffers      Offer[]       @relation("OfferSellerPayment")
   buyerOffers       Offer[]       @relation("OfferBuyerPayment")
   sellerBids        Bid[]         @relation("BidSellerPayment")
@@ -723,8 +730,9 @@ model Payment {
 
 model Logistics {
   id                String           @id @default(cuid())
-  offerId           String           // Required - logistics is always tied to an offer
-  userId            String           // User who created the logistics entry
+  offerId           String?          // Optional - can be used for offer-related logistics
+  bidId             String?           // Optional - for bid-related logistics
+  userId            String            // User who created the logistics entry
   driverName        String?
   driverPhone       String?
   truckNumber       String?
@@ -732,26 +740,27 @@ model Logistics {
   logisticsCompany  String?
   companyPhone      String?
   companyEmail      String?
-  pickupAddress     String?          @db.Text
-  deliveryAddress   String?          @db.Text
+  pickupAddress     String?           @db.Text
+  deliveryAddress   String?           @db.Text
   estimatedPickupDate   DateTime?
   estimatedDeliveryDate DateTime?
   actualPickupDate     DateTime?
   actualDeliveryDate   DateTime?
   status            LogisticsStatus   @default(PENDING)
-  notes             String?          @db.Text
+  notes             String?           @db.Text
   trackingNumber    String?
   // New fields
-  invoiceCopy       String?          // File path for invoice copy
-  biltyCopy         String?          // File path for bilty copy
-  insurance         Boolean?         // Insurance yes/no
-  trackingId        String?          // Any tracking ID
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
+  invoiceCopy       String?           // File path for invoice copy
+  biltyCopy         String?           // File path for bilty copy
+  insurance         Boolean?          // Insurance yes/no
+  trackingId        String?           // Any tracking ID
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
 
   // Relations
-  offer             Offer            @relation(fields: [offerId], references: [id], onDelete: Cascade)
-  user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  offer             Offer?            @relation(fields: [offerId], references: [id], onDelete: SetNull)
+  bid               Bid?              @relation("BidLogistics", fields: [bidId], references: [id], onDelete: SetNull)
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("logistics")
 }

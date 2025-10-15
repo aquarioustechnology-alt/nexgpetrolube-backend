@@ -2,9 +2,15 @@ import { IsString, IsNumber, IsEnum, IsOptional, IsDateString, Min } from 'class
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreatePaymentDto {
-  @ApiProperty({ description: 'Offer ID' })
+  @ApiProperty({ description: 'Offer ID', required: false })
+  @IsOptional()
   @IsString()
-  offerId: string;
+  offerId?: string;
+
+  @ApiProperty({ description: 'Bid ID', required: false })
+  @IsOptional()
+  @IsString()
+  bidId?: string;
 
   @ApiProperty({ description: 'Payment type', enum: ['COMMISSION', 'COMPLETE_PAYMENT', 'REFUND', 'ADVANCE_PAYMENT'] })
   @IsEnum(['COMMISSION', 'COMPLETE_PAYMENT', 'REFUND', 'ADVANCE_PAYMENT'])

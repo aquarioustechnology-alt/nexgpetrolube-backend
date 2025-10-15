@@ -132,4 +132,29 @@ export class BidResponseDto {
     title: string;
     postingType: string;
   };
+
+  @ApiProperty({ description: 'Seller payment status', required: false })
+  sellerPaymentStatus?: 'PENDING' | 'COMPLETED' | 'FAILED' | 'REFUNDED';
+
+  @ApiProperty({ description: 'Buyer payment status', required: false })
+  buyerPaymentStatus?: 'PENDING' | 'COMPLETED' | 'FAILED' | 'REFUNDED';
+
+  @ApiProperty({ description: 'Requirement owner details', required: false })
+  requirementOwner?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    companyName: string;
+    email: string;
+    phone: string;
+  };
+
+  @ApiProperty({ description: 'Requirement owner type', required: false })
+  requirementOwnerType?: 'SELLER' | 'BUYER';
+
+  @ApiProperty({ description: 'Logistics details', required: false })
+  logistics?: any[];
+
+  @ApiProperty({ description: 'Payment details', required: false })
+  payments?: any[];
 }

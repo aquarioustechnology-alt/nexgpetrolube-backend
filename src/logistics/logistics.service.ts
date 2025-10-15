@@ -9,26 +9,51 @@ export class LogisticsService {
   constructor(private prisma: PrismaService) {}
 
   async createLogistics(createLogisticsDto: CreateLogisticsDto, userId: string): Promise<LogisticsResponseDto> {
-    // Check if offer exists
-    const offer = await this.prisma.offer.findUnique({
-      where: { id: createLogisticsDto.offerId },
-      include: {
-        requirement: true,
-        requirementOwner: true,
-        offerUser: true,
-      },
-    });
+    // Check if offer or bid exists
+    let offer = null;
+    let bid = null;
 
-    if (!offer) {
-      throw new NotFoundException('Offer not found');
+    if (createLogisticsDto.offerId) {
+      offer = await this.prisma.offer.findUnique({
+        where: { id: createLogisticsDto.offerId },
+        include: {
+          requirement: true,
+          requirementOwner: true,
+          offerUser: true,
+        },
+      });
+
+      if (!offer) {
+        throw new NotFoundException('Offer not found');
+      }
     }
 
-    // Allow multiple logistics entries per offer (multiple vehicles)
+    if (createLogisticsDto.bidId) {
+      bid = await this.prisma.bid.findUnique({
+        where: { id: createLogisticsDto.bidId },
+        include: {
+          requirement: true,
+          requirementOwner: true,
+          bidUser: true,
+        },
+      });
+
+      if (!bid) {
+        throw new NotFoundException('Bid not found');
+      }
+    }
+
+    if (!createLogisticsDto.offerId && !createLogisticsDto.bidId) {
+      throw new BadRequestException('Either offerId or bidId must be provided');
+    }
+
+    // Allow multiple logistics entries per offer/bid (multiple vehicles)
 
     // Create logistics entry with all fields
     const logistics = await this.prisma.logistics.create({
       data: {
         offerId: createLogisticsDto.offerId,
+        bidId: createLogisticsDto.bidId,
         userId,
         driverPhone: createLogisticsDto.driverPhone,
         truckNumber: createLogisticsDto.truckNumber,
@@ -50,6 +75,13 @@ export class LogisticsService {
             offerUser: true,
           },
         },
+        bid: {
+          include: {
+            requirement: true,
+            requirementOwner: true,
+            bidUser: true,
+          },
+        },
         user: true,
       },
     });
@@ -66,6 +98,39 @@ export class LogisticsService {
             requirement: true,
             requirementOwner: true,
             offerUser: true,
+          },
+        },
+        bid: {
+          include: {
+            requirement: true,
+            requirementOwner: true,
+            bidUser: true,
+          },
+        },
+        user: true,
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    return logistics.map(logistics => this.mapToLogisticsResponse(logistics));
+  }
+
+  async getLogisticsByBidId(bidId: string): Promise<LogisticsResponseDto[]> {
+    const logistics = await this.prisma.logistics.findMany({
+      where: { bidId },
+      include: {
+        offer: {
+          include: {
+            requirement: true,
+            requirementOwner: true,
+            offerUser: true,
+          },
+        },
+        bid: {
+          include: {
+            requirement: true,
+            requirementOwner: true,
+            bidUser: true,
           },
         },
         user: true,

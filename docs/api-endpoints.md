@@ -802,6 +802,313 @@ GET /api/v1/bids?userId=user-123&auctionId=auction-123&status=ACTIVE
 Authorization: Bearer <token>
 ```
 
+### Requirement Bids
+
+#### Get Bids for Requirement
+```http
+GET /api/v1/bids/requirement/{requirementId}
+Authorization: Bearer <token>
+```
+
+**Response**:
+```json
+[
+  {
+    "id": "bid-123",
+    "requirementId": "req-456",
+    "userId": "user-789",
+    "amount": 125.50,
+    "quantity": "1000 L",
+    "status": "ACTIVE",
+    "isWinning": false,
+    "notes": "Can deliver within 7 days",
+    "placedAt": "2024-01-15T10:30:00Z",
+    "negotiationWindow": 24,
+    "deadline": "2024-01-20T18:00:00Z",
+    "minimumQuantity": "500 L",
+    "maximumQuantity": "2000 L",
+    "deliveryTerms": "FOB",
+    "paymentTerms": "30 days credit",
+    "validityPeriod": 30,
+    "offerPriority": "HIGH",
+    "sellerPaymentStatus": "PENDING",
+    "buyerPaymentStatus": "PENDING",
+    "user": {
+      "id": "user-789",
+      "firstName": "John",
+      "lastName": "Doe",
+      "companyName": "PetroCorp Ltd"
+    },
+    "requirement": {
+      "id": "req-456",
+      "title": "Diesel Fuel - High Grade",
+      "postingType": "REVERSE_BIDDING"
+    }
+  }
+]
+```
+
+#### Get Current User Bids
+```http
+GET /api/v1/bids/user/my-bids?page=1&limit=10&sortBy=createdAt&sortOrder=desc&postingType=REVERSE_BIDDING
+Authorization: Bearer <user_token>
+```
+
+#### Create Bid
+```http
+POST /api/v1/bids
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "requirementId": "req-123",
+  "amount": "125.50",
+  "quantity": "1000",
+  "notes": "Can deliver within 7 days",
+  "negotiationWindow": 24,
+  "deliveryTerms": "FOB",
+  "paymentTerms": "30 days credit"
+}
+```
+
+**Response**:
+```json
+{
+  "id": "bid-123",
+  "requirementId": "req-456",
+  "userId": "user-789",
+  "amount": 125.50,
+  "quantity": "1000 L",
+  "status": "ACTIVE",
+  "isWinning": false,
+  "notes": "Can deliver within 7 days",
+  "placedAt": "2024-01-15T10:30:00Z",
+  "negotiationWindow": 24,
+  "deadline": "2024-01-20T18:00:00Z",
+  "minimumQuantity": "500 L",
+  "maximumQuantity": "2000 L",
+  "deliveryTerms": "FOB",
+  "paymentTerms": "30 days credit",
+  "validityPeriod": 30,
+  "offerPriority": "HIGH",
+  "sellerPaymentStatus": "PENDING",
+  "buyerPaymentStatus": "PENDING",
+  "user": {
+    "id": "user-789",
+    "firstName": "John",
+    "lastName": "Doe",
+    "companyName": "PetroCorp Ltd"
+  },
+  "requirement": {
+    "id": "req-456",
+    "title": "Diesel Fuel - High Grade",
+    "postingType": "REVERSE_BIDDING"
+  }
+}
+```
+
+**Validation Rules**:
+- **Bidding Time Validation**: For `REVERSE_BIDDING` and `STANDARD_BIDDING` requirements, bids can only be placed between `biddingStartDate`/`biddingStartTime` and `biddingEndDate`/`biddingEndTime`
+- **Requirement Status**: Requirement must be `OPEN` status
+- **No Approved Bids**: Cannot bid if requirement already has `WON` bids
+- **Self-Bidding Prevention**: Users cannot bid on their own requirements
+- **Duplicate Prevention**: Users can only place one bid per requirement
+
+**Error Responses**:
+```json
+// Bidding not started
+{
+  "message": "Bidding has not started yet. Bidding will start on 2024-01-20 at 10:00:00",
+  "statusCode": 400
+}
+
+// Bidding ended
+{
+  "message": "Bidding has ended. Bidding ended on 2024-01-25 at 18:00:00",
+  "statusCode": 400
+}
+
+// Requirement closed
+{
+  "message": "Cannot bid on closed requirements",
+  "statusCode": 400
+}
+
+// Already has approved bids
+{
+  "message": "This requirement already has approved/allocated bids. No new bids can be submitted.",
+  "statusCode": 400
+}
+```
+
+#### Accept Bid
+```http
+PUT /api/v1/bids/{bidId}/accept
+Authorization: Bearer <requirement_owner_token>
+Content-Type: application/json
+
+{
+  "notes": "Bid accepted - looking forward to working with you"
+}
+```
+
+#### Reject Bid
+```http
+PUT /api/v1/bids/{bidId}/reject
+Authorization: Bearer <requirement_owner_token>
+Content-Type: application/json
+
+{
+  "reason": "Price is too high for our budget"
+}
+```
+
+#### Get Bid Details
+```http
+GET /api/v1/bids/{bidId}
+Authorization: Bearer <token>
+```
+
+**Response**:
+```json
+{
+  "id": "bid-123",
+  "requirementId": "req-456",
+  "userId": "user-789",
+  "amount": 125.50,
+  "quantity": "1000 L",
+  "status": "WON",
+  "isWinning": true,
+  "notes": "Can deliver within 7 days",
+  "placedAt": "2024-01-15T10:30:00Z",
+  "negotiationWindow": 24,
+  "deadline": "2024-01-20T18:00:00Z",
+  "minimumQuantity": "500 L",
+  "maximumQuantity": "2000 L",
+  "deliveryTerms": "FOB",
+  "paymentTerms": "30 days credit",
+  "validityPeriod": 30,
+  "offerPriority": "HIGH",
+  "sellerPaymentStatus": "COMPLETED",
+  "buyerPaymentStatus": "PENDING",
+  "originalPrice": 125.50,
+  "originalQuantity": "1000 L",
+  "allocatedQuantity": 500,
+  "allocatedPercentage": 50.00,
+  "user": {
+    "id": "user-789",
+    "firstName": "John",
+    "lastName": "Doe",
+    "companyName": "PetroCorp Ltd"
+  },
+  "requirement": {
+    "id": "req-456",
+    "title": "Diesel Fuel - High Grade",
+    "postingType": "REVERSE_BIDDING"
+  },
+  "requirementOwner": {
+    "id": "user-123",
+    "firstName": "Jane",
+    "lastName": "Smith",
+    "companyName": "Buyer Corp"
+  },
+  "logistics": [
+    {
+      "id": "log-123",
+      "transportation": "ROAD",
+      "status": "IN_TRANSIT",
+      "trackingNumber": "TRK123456789"
+    }
+  ],
+  "payments": [
+    {
+      "id": "pay-123",
+      "amount": 12550.00,
+      "paymentType": "COMMISSION",
+      "paymentStatus": "COMPLETED",
+      "paymentMethod": "UPI"
+    }
+  ]
+}
+```
+
+#### Get Bid Results
+```http
+GET /api/v1/bids/requirement/{requirementId}/results
+Authorization: Bearer <token>
+```
+
+**Response**:
+```json
+[
+  {
+    "id": "bid-123",
+    "requirementId": "req-456",
+    "userId": "user-789",
+    "amount": 125.50,
+    "quantity": "1000 L",
+    "status": "WON",
+    "isWinning": true,
+    "notes": "Can deliver within 7 days",
+    "placedAt": "2024-01-15T10:30:00Z",
+    "user": {
+      "id": "user-789",
+      "firstName": "John",
+      "lastName": "Doe",
+      "companyName": "PetroCorp Ltd"
+    },
+    "requirement": {
+      "id": "req-456",
+      "title": "Diesel Fuel - High Grade",
+      "postingType": "REVERSE_BIDDING"
+    }
+  }
+]
+```
+
+#### Allocate Bids (Multi-Supplier)
+```http
+PUT /api/v1/bids/requirement/{requirementId}/allocate
+Authorization: Bearer <requirement_owner_token>
+Content-Type: application/json
+
+{
+  "allocations": {
+    "bid-123": 50,
+    "bid-456": 30,
+    "bid-789": 20
+  },
+  "quantities": {
+    "bid-123": 500,
+    "bid-456": 300,
+    "bid-789": 200
+  }
+}
+```
+
+**Response**:
+```json
+{
+  "message": "Successfully allocated bids to 3 supplier(s)",
+  "allocatedBids": [
+    {
+      "id": "bid-123",
+      "status": "WON",
+      "allocatedQuantity": 500,
+      "allocatedPercentage": 50.00,
+      "originalPrice": 125.50,
+      "originalQuantity": "1000 L",
+      "user": {
+        "id": "user-789",
+        "firstName": "John",
+        "lastName": "Doe",
+        "companyName": "PetroCorp Ltd"
+      }
+    }
+  ]
+}
+```
+
 ## File Upload Endpoints
 
 ### Upload Files
@@ -942,10 +1249,14 @@ Content-Type: application/json
   "amount": 15000.00,
   "currency": "INR",
   "paymentMethod": "STRIPE",
-  "orderId": "order-123",
+  "paymentType": "COMMISSION",
+  "offerId": "offer-123",
+  "bidId": "bid-123",
   "description": "Payment for requirement offer"
 }
 ```
+
+**Note**: Either `offerId` or `bidId` should be provided, not both.
 
 #### Get Payment Status
 ```http
@@ -975,6 +1286,12 @@ GET /api/v1/logistics/offer/{offerId}
 Authorization: Bearer <token>
 ```
 
+#### Get Logistics by Bid ID
+```http
+GET /api/v1/logistics/bid/{bidId}
+Authorization: Bearer <token>
+```
+
 #### Create Logistics
 ```http
 POST /api/v1/logistics
@@ -983,6 +1300,7 @@ Content-Type: application/json
 
 {
   "offerId": "offer-123",
+  "bidId": "bid-123",
   "transportation": "ROAD",
   "deliveryDate": "2024-01-25T10:00:00Z",
   "pickupAddress": {
@@ -999,6 +1317,8 @@ Content-Type: application/json
   }
 }
 ```
+
+**Note**: Either `offerId` or `bidId` should be provided, not both.
 
 #### Update Logistics
 ```http

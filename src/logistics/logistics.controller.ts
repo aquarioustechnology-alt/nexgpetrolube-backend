@@ -29,6 +29,13 @@ export class LogisticsController {
     return this.logisticsService.getLogisticsByOfferId(offerId);
   }
 
+  @Get('bid/:bidId')
+  @ApiOperation({ summary: 'Get all logistics entries for a bid' })
+  @ApiResponse({ status: 200, description: 'Logistics entries retrieved successfully', type: [LogisticsResponseDto] })
+  async getLogisticsByBidId(@Param('bidId') bidId: string) {
+    return this.logisticsService.getLogisticsByBidId(bidId);
+  }
+
   @Put(':id/status')
   @ApiOperation({ summary: 'Update logistics status' })
   @ApiResponse({ status: 200, description: 'Logistics status updated successfully', type: LogisticsResponseDto })

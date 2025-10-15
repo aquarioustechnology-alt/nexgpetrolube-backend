@@ -473,7 +473,90 @@ const counterOffer = await this.offersService.createCounterOffer(offerId, userId
 });
 ```
 
-### 8. Notifications Service (`NotificationsService`)
+### 8. Bids Service (`BidsService`)
+
+**Purpose**: Bid management, bidding operations, and bid lifecycle management
+
+**Key Methods**:
+
+```typescript
+@Injectable()
+export class BidsService {
+  constructor(
+    private prisma: PrismaService,
+    private notificationsService: NotificationsService,
+  ) {}
+
+  // Bid CRUD operations
+  async create(createBidDto: CreateBidDto): Promise<Bid>
+  async findAll(filters?: BidFilters): Promise<Bid[]>
+  async findOne(id: string): Promise<Bid>
+  async getBidsByRequirement(requirementId: string): Promise<Bid[]>
+  async getBidById(id: string): Promise<Bid>
+  async getBidResults(requirementId: string): Promise<Bid[]>
+  
+  // Bid actions
+  async acceptBid(bidId: string, userId: string, notes?: string): Promise<{ message: string; bid: Bid }>
+  async rejectBid(bidId: string, userId: string, reason?: string): Promise<{ message: string; bid: Bid }>
+  async allocateBids(requirementId: string, allocations: { [bidId: string]: number }, userId: string, quantities?: { [bidId: string]: number }): Promise<{ message: string; allocatedBids: Bid[] }>
+  
+  // Bid validation
+  private validateBidCreation(createBidDto: CreateBidDto): Promise<void>
+  private validateBidAcceptance(bid: Bid, userId: string): Promise<void>
+  private validateBidAllocation(requirementId: string, allocations: { [bidId: string]: number }, userId: string): Promise<void>
+  
+  // Bid status management
+  private updateBidStatus(bidId: string, status: BidStatus): Promise<Bid>
+  private updateOtherBidsStatus(requirementId: string, winningBidId: string): Promise<void>
+  
+  // Statistics
+  async getBidStats(userId?: string): Promise<BidStats>
+  async getUserBids(userId: string): Promise<Bid[]>
+}
+```
+
+**Usage Example**:
+```typescript
+// Create bid
+const bid = await this.bidsService.create({
+  requirementId: 'req-123',
+  amount: '125.50',
+  quantity: '1000',
+  notes: 'Can deliver within 7 days',
+  negotiationWindow: 24,
+  deliveryTerms: 'FOB',
+  paymentTerms: '30 days credit'
+});
+
+// Accept bid
+const result = await this.bidsService.acceptBid(bidId, userId, 'Bid accepted - looking forward to working with you');
+
+// Allocate bids to multiple suppliers
+const allocationResult = await this.bidsService.allocateBids(requirementId, {
+  'bid-123': 50,
+  'bid-456': 30,
+  'bid-789': 20
+}, userId, {
+  'bid-123': 500,
+  'bid-456': 300,
+  'bid-789': 200
+});
+
+// Get bid results
+const results = await this.bidsService.getBidResults(requirementId);
+```
+
+**Key Features**:
+- **Bid Creation**: Create bids for requirements with validation
+- **Bid Acceptance**: Accept bids with automatic status updates
+- **Bid Rejection**: Reject bids with reason tracking
+- **Multi-Supplier Allocation**: Allocate bids to multiple suppliers with percentage distribution
+- **Bid Results**: Get sorted bid results for requirements
+- **Status Management**: Automatic status updates for bid lifecycle
+- **Validation**: Comprehensive validation for bid operations
+- **Authorization**: Ensure only requirement owners can accept/reject/allocate bids
+
+### 9. Notifications Service (`NotificationsService`)
 
 **Purpose**: Notification management, delivery, and user communication
 
@@ -535,7 +618,7 @@ await this.notificationsService.sendEmailNotification(userId, 'offer-received', 
 await this.notificationsService.markAsRead(notificationId, userId);
 ```
 
-### 9. Upload Service (`UploadService`)
+### 10. Upload Service (`UploadService`)
 
 **Purpose**: File upload management, storage, and file operations with AWS S3 integration
 
