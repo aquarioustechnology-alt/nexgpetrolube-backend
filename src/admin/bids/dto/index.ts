@@ -168,6 +168,24 @@ export class AdminBidResponseDto {
   @ApiPropertyOptional({ description: 'Offer priority' })
   offerPriority?: string;
 
+  @ApiPropertyOptional({ description: 'Seller payment status' })
+  sellerPaymentStatus?: string;
+
+  @ApiPropertyOptional({ description: 'Buyer payment status' })
+  buyerPaymentStatus?: string;
+
+  @ApiPropertyOptional({ description: 'Allocated quantity' })
+  allocatedQuantity?: number;
+
+  @ApiPropertyOptional({ description: 'Allocated percentage' })
+  allocatedPercentage?: number;
+
+  @ApiPropertyOptional({ description: 'Original price' })
+  originalPrice?: number;
+
+  @ApiPropertyOptional({ description: 'Original quantity' })
+  originalQuantity?: number;
+
   @ApiProperty({ description: 'Bidder information' })
   user: {
     id: string;
@@ -175,22 +193,94 @@ export class AdminBidResponseDto {
     lastName: string;
     companyName: string;
     email: string;
+    phone?: string;
   };
 
   @ApiProperty({ description: 'Requirement information' })
   requirement: {
     id: string;
     title: string;
+    description?: string;
     postingType: string;
     productName?: string;
     units?: string;
+    quantity?: string;
+    unitPrice?: string;
+    status?: string;
+    urgency?: string;
+    deliveryMethod?: string;
+    deliveryTimeline?: string;
+    country?: string;
+    city?: string;
+    state?: string;
+    createdAt?: string;
+    updatedAt?: string;
     user: {
       id: string;
       firstName: string;
       lastName: string;
       companyName: string;
+      email?: string;
+      phone?: string;
+    };
+    category?: {
+      id: string;
+      name: string;
+    };
+    subcategory?: {
+      id: string;
+      name: string;
+    };
+    product?: {
+      id: string;
+      name: string;
+      description?: string;
+    };
+    brand?: {
+      id: string;
+      name: string;
     };
   };
+
+  @ApiPropertyOptional({ description: 'Payment information', type: 'array' })
+  payments?: Array<{
+    id: string;
+    amount: number;
+    paymentType: string;
+    paymentStatus: string;
+    paymentMethod?: string;
+    transactionId?: string;
+    processedAt?: string;
+    createdAt: string;
+    updatedAt: string;
+    user: {
+      id: string;
+      firstName: string;
+      lastName: string;
+      companyName: string;
+      email: string;
+    };
+  }>;
+
+  @ApiPropertyOptional({ description: 'Logistics information', type: 'array' })
+  logistics?: Array<{
+    id: string;
+    trackingNumber?: string;
+    logisticsCompany?: string;
+    deliveryAddress?: string;
+    actualDeliveryDate?: string;
+    status?: string;
+    notes?: string;
+    createdAt: string;
+    updatedAt: string;
+    user: {
+      id: string;
+      firstName: string;
+      lastName: string;
+      companyName: string;
+      email: string;
+    };
+  }>;
 }
 
 export class AdminBidsListingResponseDto {

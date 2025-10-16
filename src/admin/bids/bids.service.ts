@@ -182,21 +182,105 @@ export class AdminBidsService {
             lastName: true,
             companyName: true,
             email: true,
+            phone: true,
           },
         },
         requirement: {
           select: {
             id: true,
             title: true,
+            description: true,
             postingType: true,
             productName: true,
             units: true,
+            quantity: true,
+            unitPrice: true,
+            status: true,
+            urgency: true,
+            deliveryMethod: true,
+            deliveryTimeline: true,
+            country: true,
+            city: true,
+            state: true,
+            createdAt: true,
+            updatedAt: true,
             user: {
               select: {
                 id: true,
                 firstName: true,
                 lastName: true,
                 companyName: true,
+                email: true,
+                phone: true,
+              },
+            },
+            category: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+            subcategory: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+            product: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+              },
+            },
+            brand: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+        payments: {
+          select: {
+            id: true,
+            amount: true,
+            paymentType: true,
+            paymentStatus: true,
+            paymentMethod: true,
+            transactionId: true,
+            processedAt: true,
+            createdAt: true,
+            updatedAt: true,
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                companyName: true,
+                email: true,
+              },
+            },
+          },
+        },
+        logistics: {
+          select: {
+            id: true,
+            trackingNumber: true,
+            logisticsCompany: true,
+            deliveryAddress: true,
+            actualDeliveryDate: true,
+            status: true,
+            notes: true,
+            createdAt: true,
+            updatedAt: true,
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                companyName: true,
+                email: true,
               },
             },
           },
@@ -351,8 +435,16 @@ export class AdminBidsService {
       paymentTerms: bid.paymentTerms,
       validityPeriod: bid.validityPeriod,
       offerPriority: bid.bidPriority,
+      sellerPaymentStatus: bid.sellerPaymentStatus,
+      buyerPaymentStatus: bid.buyerPaymentStatus,
+      allocatedQuantity: bid.allocatedQuantity,
+      allocatedPercentage: bid.allocatedPercentage,
+      originalPrice: bid.originalPrice,
+      originalQuantity: bid.originalQuantity,
       user: bid.bidUser,
       requirement: bid.requirement,
+      payments: bid.payments || [],
+      logistics: bid.logistics || [],
     };
   }
 }
