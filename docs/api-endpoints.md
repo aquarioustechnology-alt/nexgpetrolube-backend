@@ -269,6 +269,240 @@ Authorization: Bearer <admin_token>
 }
 ```
 
+## Profile Management Endpoints
+
+### Profile Operations
+
+#### Get Complete User Profile
+```http
+GET /api/v1/profile
+Authorization: Bearer <user_token>
+```
+
+**Response**:
+```json
+{
+  "id": "user-123",
+  "email": "user@example.com",
+  "phone": "+91-9876543210",
+  "firstName": "John",
+  "lastName": "Doe",
+  "companyName": "ABC Corp",
+  "role": "BUYER",
+  "kycStatus": "APPROVED",
+  "isActive": true,
+  "isEmailVerified": true,
+  "isPhoneVerified": true,
+  "profileImage": "/uploads/profile/user-123.jpg",
+  "dateOfBirth": "1990-01-01",
+  "gender": "Male",
+  "accountType": "individual",
+  "createdAt": "2024-01-15T10:00:00Z",
+  "updatedAt": "2024-01-15T10:00:00Z",
+  "addresses": [
+    {
+      "id": "addr-123",
+      "type": "COMMUNICATION",
+      "line1": "123 Main Street",
+      "line2": "Apt 4B",
+      "city": "Mumbai",
+      "state": "Maharashtra",
+      "country": "India",
+      "pincode": "400001",
+      "isDefault": true
+    }
+  ],
+  "kyc": {
+    "id": "kyc-123",
+    "panNumber": "ABCDE1234F",
+    "aadhaarNumber": "123456789012",
+    "gstNumber": "27AABCU9603R1ZX",
+    "yearsInBusiness": 5,
+    "kycStatus": "APPROVED",
+    "rejectionReason": null,
+    "submittedAt": "2024-01-15T10:00:00Z"
+  },
+  "bankDetails": {
+    "id": "bank-123",
+    "accountNumber": "1234567890",
+    "ifscCode": "HDFC0001234",
+    "bankName": "HDFC Bank",
+    "accountHolderName": "John Doe",
+    "isVerified": true
+  },
+  "profileCompletion": 85
+}
+```
+
+#### Update Personal Information
+```http
+PATCH /api/v1/profile/personal
+Authorization: Bearer <user_token>
+Content-Type: application/json
+
+{
+  "firstName": "John",
+  "lastName": "Doe",
+  "companyName": "ABC Corp",
+  "phone": "+91-9876543210",
+  "profileImage": "/uploads/profile/user-123.jpg",
+  "dateOfBirth": "1990-01-01",
+  "gender": "Male",
+  "accountType": "individual"
+}
+```
+
+#### Update KYC Information
+```http
+PATCH /api/v1/profile/kyc
+Authorization: Bearer <user_token>
+Content-Type: application/json
+
+{
+  "panNumber": "ABCDE1234F",
+  "aadhaarNumber": "123456789012",
+  "gstNumber": "27AABCU9603R1ZX",
+  "yearsInBusiness": 5
+}
+```
+
+### Address Management
+
+#### Create Address
+```http
+POST /api/v1/profile/addresses
+Authorization: Bearer <user_token>
+Content-Type: application/json
+
+{
+  "type": "COMMUNICATION",
+  "line1": "123 Main Street",
+  "line2": "Apt 4B",
+  "city": "Mumbai",
+  "state": "Maharashtra",
+  "country": "India",
+  "pincode": "400001",
+  "isDefault": true
+}
+```
+
+#### Update Address
+```http
+PATCH /api/v1/profile/addresses/{addressId}
+Authorization: Bearer <user_token>
+Content-Type: application/json
+
+{
+  "type": "COMMUNICATION",
+  "line1": "456 Updated Street",
+  "city": "Mumbai",
+  "state": "Maharashtra",
+  "country": "India",
+  "pincode": "400002",
+  "isDefault": true
+}
+```
+
+#### Delete Address
+```http
+DELETE /api/v1/profile/addresses/{addressId}
+Authorization: Bearer <user_token>
+```
+
+### Payment Methods Management
+
+#### Get Payment Methods
+```http
+GET /api/v1/profile/payment-methods
+Authorization: Bearer <user_token>
+```
+
+**Response**:
+```json
+[
+  {
+    "id": "pm-123",
+    "cardNumber": "**** **** **** 1234",
+    "cardHolderName": "John Doe",
+    "expiryDate": "12/25",
+    "cardType": "Visa",
+    "isDefault": true,
+    "createdAt": "2024-01-15T10:00:00Z"
+  }
+]
+```
+
+#### Add Payment Method
+```http
+POST /api/v1/profile/payment-methods
+Authorization: Bearer <user_token>
+Content-Type: application/json
+
+{
+  "cardNumber": "4111111111111111",
+  "cardHolderName": "John Doe",
+  "expiryDate": "12/25",
+  "cvv": "123",
+  "isDefault": true
+}
+```
+
+#### Update Payment Method
+```http
+PATCH /api/v1/profile/payment-methods/{paymentMethodId}
+Authorization: Bearer <user_token>
+Content-Type: application/json
+
+{
+  "cardHolderName": "John Doe Updated",
+  "expiryDate": "12/26",
+  "isDefault": false
+}
+```
+
+#### Delete Payment Method
+```http
+DELETE /api/v1/profile/payment-methods/{paymentMethodId}
+Authorization: Bearer <user_token>
+```
+
+### Transaction History
+
+#### Get Transactions
+```http
+GET /api/v1/profile/transactions?startDate=2024-01-01&endDate=2024-01-31
+Authorization: Bearer <user_token>
+```
+
+**Query Parameters**:
+- `startDate`: Filter transactions from this date (YYYY-MM-DD)
+- `endDate`: Filter transactions up to this date (YYYY-MM-DD)
+
+**Response**:
+```json
+{
+  "transactions": [
+    {
+      "id": "txn-123",
+      "date": "2024-01-15T10:00:00Z",
+      "description": "Commission payment for offer acceptance",
+      "amount": 1500.00,
+      "currency": "INR",
+      "status": "COMPLETED",
+      "type": "COMMISSION",
+      "reference": "offer-123",
+      "method": "Credit Card"
+    }
+  ]
+}
+```
+
+#### Get Transaction by ID
+```http
+GET /api/v1/profile/transactions/{transactionId}
+Authorization: Bearer <user_token>
+```
+
 ## KYC Management Endpoints
 
 ### KYC Operations
