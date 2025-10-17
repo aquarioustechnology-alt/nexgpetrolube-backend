@@ -293,8 +293,8 @@ export class ProfileService {
       documents: kyc.documents.map((doc: any) => ({
         id: doc.id,
         type: doc.type,
-        url: doc.url,
-        name: doc.name,
+        url: doc.fileUrl || doc.fileName || '', // Use fileUrl or fileName from the database
+        name: doc.fileName || '', // Use fileName from the database
       })),
     };
   }

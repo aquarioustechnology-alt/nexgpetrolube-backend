@@ -22,14 +22,26 @@ export class AuthService {
     private otpService: OtpService,
   ) {}
 
-  async validateUser(email: string, password: string): Promise<any> {
-    const user = await this.prisma.user.findUnique({
-      where: { email },
+  async validateUser(emailOrPhone: string, password: string): Promise<any> {
+    // Try to find user by email first
+    let user = await this.prisma.user.findUnique({
+      where: { email: emailOrPhone },
       include: {
         addresses: true,
         kyc: true,
       },
     });
+
+    // If not found by email, try by phone
+    if (!user) {
+      user = await this.prisma.user.findFirst({
+        where: { phone: emailOrPhone },
+        include: {
+          addresses: true,
+          kyc: true,
+        },
+      });
+    }
 
     if (user && user.password && await bcrypt.compare(password, user.password)) {
       const { password: _, ...result } = user;
@@ -52,7 +64,14 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto) {
-    const user = await this.validateUser(loginDto.email, loginDto.password);
+    // Determine if login is with email or phone
+    const emailOrPhone = loginDto.email || loginDto.phone;
+    
+    if (!emailOrPhone) {
+      throw new BadRequestException('Email or phone number is required');
+    }
+
+    const user = await this.validateUser(emailOrPhone, loginDto.password);
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
