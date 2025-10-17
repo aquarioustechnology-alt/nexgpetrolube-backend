@@ -74,6 +74,8 @@ The NexGPetrolube Backend API is a comprehensive NestJS-based backend service th
 - **Bids Management**: Comprehensive bidding system with bid history and analytics
 - **Quotes System**: Quote generation and management for negotiations
 - **Counter Offers**: Advanced negotiation system with counter-offer capabilities
+- **Negotiation Window Expiry**: Automatic offer expiration based on configurable time windows (12h, 24h, 36h, 48h, 1 week)
+- **Auto-Rejection Cron Job**: Scheduled task running every 5 minutes to auto-expire offers past their negotiation window
 - **Notifications Service**: Real-time notification system for users
 
 ## Technology Stack

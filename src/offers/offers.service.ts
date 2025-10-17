@@ -80,6 +80,14 @@ export class OffersService {
       );
     }
 
+    // Calculate offer expiry date based on negotiation window for negotiable requirements
+    let offerExpiryDate: Date | null = null
+    if (requirement.negotiableType === 'negotiable' && requirement.negotiationWindow) {
+      const negotiationWindowHours = parseInt(requirement.negotiationWindow)
+      offerExpiryDate = new Date()
+      offerExpiryDate.setHours(offerExpiryDate.getHours() + negotiationWindowHours)
+    }
+
     // Create the offer
     const offer = await this.prisma.offer.create({
       data: {
@@ -91,11 +99,11 @@ export class OffersService {
         offerUserId: userId,
         negotiableType: requirement.negotiableType || 'negotiable',
         postingType: requirement.postingType,
-        negotiationWindow: createOfferDto.negotiationWindow,
+        negotiationWindow: requirement.negotiationWindow ? parseInt(requirement.negotiationWindow) : null,
         deadline: createOfferDto.deadline ? new Date(createOfferDto.deadline) : null,
         offerStatus: OfferStatus.PENDING,
         offerMessage: createOfferDto.offerMessage,
-        offerExpiryDate: createOfferDto.offerExpiryDate ? new Date(createOfferDto.offerExpiryDate) : null,
+        offerExpiryDate: offerExpiryDate,
         minimumQuantity: createOfferDto.minimumQuantity,
         maximumQuantity: createOfferDto.maximumQuantity,
         deliveryTerms: createOfferDto.deliveryTerms,
@@ -489,6 +497,22 @@ export class OffersService {
       throw new ForbiddenException('Not authorized to update this offer');
     }
 
+    // Check if offer has expired for negotiable offers
+    if (offer.negotiableType === 'negotiable' && offer.offerExpiryDate) {
+      const now = new Date()
+      if (now > offer.offerExpiryDate) {
+        // Auto-reject expired offer
+        await this.prisma.offer.update({
+          where: { id },
+          data: {
+            offerStatus: OfferStatus.EXPIRED,
+            updatedAt: new Date(),
+          },
+        })
+        throw new BadRequestException(`This offer has expired. The negotiation window of ${offer.negotiationWindow} hours has passed.`)
+      }
+    }
+
     // Validate status transitions
     this.validateStatusTransition(offer.offerStatus, updateDto.action);
 
@@ -592,7 +616,23 @@ export class OffersService {
 
     // Check if parent offer is still pending
     if (parentOffer.offerStatus !== OfferStatus.PENDING) {
-      throw new BadRequestException('Cannot create counter offer on non-pending offer');
+      throw new BadRequestException('You can not counter on this offer.');
+    }
+
+    // Check if parent offer has expired
+    if (parentOffer.negotiableType === 'negotiable' && parentOffer.offerExpiryDate) {
+      const now = new Date()
+      if (now > parentOffer.offerExpiryDate) {
+        // Auto-reject expired parent offer
+        await this.prisma.offer.update({
+          where: { id: parentOfferId },
+          data: {
+            offerStatus: OfferStatus.EXPIRED,
+            updatedAt: new Date(),
+          },
+        })
+        throw new BadRequestException(`This offer has expired. The negotiation window of ${parentOffer.negotiationWindow} hours has passed.`)
+      }
     }
 
     // Update parent offer status to COUNTERED
@@ -600,6 +640,10 @@ export class OffersService {
       where: { id: parentOfferId },
       data: { offerStatus: OfferStatus.COUNTERED },
     });
+
+    // Counter offer inherits the same expiry date as the original offer
+    // This ensures the entire negotiation window is consistent
+    const counterOfferExpiryDate = parentOffer.offerExpiryDate
 
     // Create counter offer
     const counterOffer = await this.prisma.offer.create({
@@ -612,12 +656,12 @@ export class OffersService {
         offerUserId: parentOffer.offerUserId,
         negotiableType: parentOffer.negotiableType,
         postingType: parentOffer.postingType,
-        negotiationWindow: counterOfferDto.negotiationWindow,
+        negotiationWindow: parentOffer.negotiationWindow,
         deadline: counterOfferDto.deadline ? new Date(counterOfferDto.deadline) : null,
         offerStatus: OfferStatus.PENDING,
         offerMessage: counterOfferDto.offerMessage,
         parentOfferId: parentOfferId,
-        offerExpiryDate: counterOfferDto.offerExpiryDate ? new Date(counterOfferDto.offerExpiryDate) : null,
+        offerExpiryDate: counterOfferExpiryDate,
         minimumQuantity: counterOfferDto.minimumQuantity,
         maximumQuantity: counterOfferDto.maximumQuantity,
         deliveryTerms: counterOfferDto.deliveryTerms,

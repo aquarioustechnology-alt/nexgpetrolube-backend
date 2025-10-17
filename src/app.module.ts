@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { ScheduleModule } from '@nestjs/schedule';
 import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
@@ -34,6 +35,9 @@ import { AppConfigModule } from './config/app.config';
         limit: 100, // 100 requests per minute
       },
     ]),
+
+    // Task scheduling for cron jobs
+    ScheduleModule.forRoot(),
 
     // App configuration
     AppConfigModule,

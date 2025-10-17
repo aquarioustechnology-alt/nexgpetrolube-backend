@@ -250,6 +250,22 @@ export class CounterOffersService {
       throw new BadRequestException('Counteroffer has expired');
     }
 
+    // Check if the main offer has expired (for negotiable offers)
+    if (counterOffer.offer.negotiableType === 'negotiable' && counterOffer.offer.offerExpiryDate) {
+      const now = new Date();
+      if (now > counterOffer.offer.offerExpiryDate) {
+        // Auto-reject expired offer
+        await this.prisma.offer.update({
+          where: { id: counterOffer.offerId },
+          data: {
+            offerStatus: 'EXPIRED',
+            updatedAt: new Date(),
+          },
+        });
+        throw new BadRequestException(`This offer has expired. The negotiation window of ${counterOffer.offer.negotiationWindow} hours has passed.`);
+      }
+    }
+
     // Check authorization - only the other party can accept
     const isRequirementOwner = counterOffer.offer.requirementOwnerId === userId;
     const isOfferUser = counterOffer.offer.offerUserId === userId;

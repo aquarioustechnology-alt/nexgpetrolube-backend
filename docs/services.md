@@ -448,6 +448,16 @@ export class OffersService {
   async getOfferStats(userId?: string): Promise<OfferStats>
   async getUserOffers(userId: string): Promise<Offer[]>
 }
+
+// Negotiation Window Expiry Service
+@Injectable()
+export class OffersCronService {
+  constructor(private prisma: PrismaService) {}
+  
+  // Runs every 5 minutes to auto-expire offers that have passed their negotiation window
+  @Cron(CronExpression.EVERY_5_MINUTES)
+  async handleExpiredOffers(): Promise<void>
+}
 ```
 
 **Usage Example**:
@@ -472,6 +482,30 @@ const counterOffer = await this.offersService.createCounterOffer(offerId, userId
   notes: 'Counter offer with better price'
 });
 ```
+
+**Negotiation Window Feature**:
+
+The negotiation window feature automatically manages offer expiration for negotiable requirements:
+
+1. **When an offer is created** on a negotiable requirement:
+   - The `offerExpiryDate` is automatically calculated based on the requirement's `negotiationWindow` value
+   - Example: If negotiationWindow is 12 hours and offer is placed at 11:30 AM, expiry is set to 11:30 PM
+
+2. **During negotiation**:
+   - Users can accept, reject, or counter the offer within the negotiation window
+   - Counter offers inherit the same expiry date as the original offer
+   - The system checks expiry before allowing any action (accept/counter)
+
+3. **After expiry**:
+   - Offers are automatically marked as `EXPIRED` by the cron job (runs every 5 minutes)
+   - API calls to accept or counter expired offers are rejected with an error message
+   - Frontend displays "Expired" status and disables all action buttons
+
+4. **Cron Job**:
+   - Runs every 5 minutes using `@Cron(CronExpression.EVERY_5_MINUTES)`
+   - Finds all pending negotiable offers with expired `offerExpiryDate`
+   - Updates their status to `EXPIRED`
+   - Logs the expiration details for monitoring
 
 ### 8. Bids Service (`BidsService`)
 
