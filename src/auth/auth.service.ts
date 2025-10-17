@@ -275,6 +275,33 @@ export class AuthService {
     return { message: 'Logged out successfully' };
   }
 
+  async checkAvailability(email: string, phone?: string) {
+    // Check if user with this email already exists
+    const existingUserByEmail = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (existingUserByEmail) {
+      throw new BadRequestException('User with this email already exists');
+    }
+
+    // Check if user with this phone number already exists (if phone is provided)
+    if (phone) {
+      const existingUserByPhone = await this.prisma.user.findFirst({
+        where: { phone },
+      });
+
+      if (existingUserByPhone) {
+        throw new BadRequestException('User with this phone number already exists');
+      }
+    }
+
+    return {
+      available: true,
+      message: 'Email and phone are available for registration',
+    };
+  }
+
   async sendOtp(sendOtpDto: SendOtpDto) {
     const otp = await this.otpService.sendOtp(sendOtpDto.email, sendOtpDto.phone);
     

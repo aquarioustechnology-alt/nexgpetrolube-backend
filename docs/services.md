@@ -618,7 +618,107 @@ await this.notificationsService.sendEmailNotification(userId, 'offer-received', 
 await this.notificationsService.markAsRead(notificationId, userId);
 ```
 
-### 10. Upload Service (`UploadService`)
+### 10. Profile Service (`ProfileService`)
+
+**Purpose**: User profile management, KYC, addresses, payment methods, and transactions
+
+**Key Methods**:
+
+```typescript
+@Injectable()
+export class ProfileService {
+  constructor(private prisma: PrismaService) {}
+
+  // Profile management
+  async getProfile(userId: string): Promise<ProfileResponseDto>
+  async updatePersonalInfo(userId: string, updateData: UpdatePersonalInfoDTO): Promise<ProfileResponseDto>
+  async updateKyc(userId: string, updateData: UpdateKycDto): Promise<ProfileResponseDto>
+  
+  // Address management
+  async createAddress(userId: string, createData: UpdateAddressDto): Promise<ProfileResponseDto>
+  async updateAddress(userId: string, addressId: string, updateData: UpdateAddressDto): Promise<ProfileResponseDto>
+  async deleteAddress(userId: string, addressId: string): Promise<ProfileResponseDto>
+  
+  // Profile completion calculation
+  private calculateProfileCompletion(user: any): number
+}
+```
+
+**Usage Example**:
+```typescript
+// Get complete user profile
+const profile = await this.profileService.getProfile(userId);
+
+// Update personal information
+const updatedProfile = await this.profileService.updatePersonalInfo(userId, {
+  firstName: 'John',
+  lastName: 'Doe',
+  companyName: 'ABC Corp',
+  phone: '+1234567890'
+});
+
+// Update KYC information
+const kycUpdated = await this.profileService.updateKyc(userId, {
+  panNumber: 'ABCDE1234F',
+  aadhaarNumber: '123456789012',
+  gstNumber: '27AABCU9603R1ZX',
+  yearsInBusiness: 5
+});
+
+// Add new address
+const addressAdded = await this.profileService.createAddress(userId, {
+  type: 'COMMUNICATION',
+  line1: '123 Main Street',
+  city: 'Mumbai',
+  state: 'Maharashtra',
+  country: 'India',
+  pincode: '400001',
+  isDefault: true
+});
+```
+
+### 11. Payment Methods Service (`PaymentMethodsService`)
+
+**Purpose**: Payment methods and transaction management
+
+**Key Methods**:
+
+```typescript
+@Injectable()
+export class PaymentMethodsService {
+  constructor(private prisma: PrismaService) {}
+
+  // Payment methods management
+  async getPaymentMethods(userId: string): Promise<PaymentMethodDto[]>
+  async addPaymentMethod(userId: string, createData: CreatePaymentMethodDto): Promise<PaymentMethodDto>
+  async updatePaymentMethod(userId: string, paymentMethodId: string, updateData: UpdatePaymentMethodDto): Promise<PaymentMethodDto>
+  async deletePaymentMethod(userId: string, paymentMethodId: string): Promise<void>
+  
+  // Transaction management
+  async getTransactions(userId: string, startDate?: Date, endDate?: Date): Promise<{ transactions: TransactionDto[] }>
+  async getTransactionById(userId: string, transactionId: string): Promise<TransactionDto>
+}
+```
+
+**Usage Example**:
+```typescript
+// Get saved payment methods
+const paymentMethods = await this.paymentMethodsService.getPaymentMethods(userId);
+
+// Add new payment method
+const newPaymentMethod = await this.paymentMethodsService.addPaymentMethod(userId, {
+  cardNumber: '4111111111111111',
+  cardHolderName: 'John Doe',
+  expiryDate: '12/25',
+  cvv: '123',
+  isDefault: true
+});
+
+// Get transaction history
+const transactions = await this.paymentMethodsService.getTransactions(userId, startDate, endDate);
+```
+
+### 12. Upload Service (`UploadService`)
 
 **Purpose**: File upload management, storage, and file operations with AWS S3 integration
 
@@ -666,7 +766,7 @@ await this.uploadService.deleteFile('uuid-generated.jpg');
 - **S3 URL Generation**: Direct S3 URLs for file access
 - **Error Handling**: Comprehensive error handling for S3 operations
 
-### 10. Payments Service (`PaymentsService`)
+### 13. Payments Service (`PaymentsService`)
 
 **Purpose**: Payment processing, gateway integration, and transaction management
 

@@ -55,6 +55,22 @@ export class OfferResponseDto {
     city?: string;
     state?: string;
     deadline?: Date;
+    category?: {
+      id: string;
+      name: string;
+    };
+    subcategory?: {
+      id: string;
+      name: string;
+    };
+    product?: {
+      id: string;
+      name: string;
+    };
+    brand?: {
+      id: string;
+      name: string;
+    };
     user: {
       id: string;
       firstName?: string;

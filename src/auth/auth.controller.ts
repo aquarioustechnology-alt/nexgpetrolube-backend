@@ -8,6 +8,7 @@ import { SendOtpDto } from './dto/send-otp.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { ForgotPasswordDto, VerifyResetOtpDto, ResetPasswordDto } from './dto/forgot-password.dto';
 import { UserDetailsResponseDto, UpdateUserDetailsDto } from './dto/user-details.dto';
+import { CheckAvailabilityDto } from './dto/check-availability.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @ApiTags('Authentication')
@@ -29,6 +30,17 @@ export class AuthController {
   @ApiResponse({ status: 400, description: 'Bad request' })
   async register(@Body() registerDto: RegisterDto) {
     return this.authService.register(registerDto);
+  }
+
+  @Post('check-availability')
+  @ApiOperation({ summary: 'Check if email and phone are available for registration' })
+  @ApiResponse({ status: 200, description: 'Email and phone are available' })
+  @ApiResponse({ status: 400, description: 'Email or phone already exists' })
+  async checkAvailability(@Body() checkAvailabilityDto: CheckAvailabilityDto) {
+    return this.authService.checkAvailability(
+      checkAvailabilityDto.email,
+      checkAvailabilityDto.phone,
+    );
   }
 
   @Post('admin/login')

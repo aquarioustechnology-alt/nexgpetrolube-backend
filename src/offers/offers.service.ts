@@ -285,6 +285,30 @@ export class OffersService {
       include: {
         requirement: {
           include: {
+            category: {
+              select: {
+                id: true,
+                name: true
+              }
+            },
+            subcategory: {
+              select: {
+                id: true,
+                name: true
+              }
+            },
+            product: {
+              select: {
+                id: true,
+                name: true
+              }
+            },
+            brand: {
+              select: {
+                id: true,
+                name: true
+              }
+            },
             user: {
               select: {
                 id: true,
